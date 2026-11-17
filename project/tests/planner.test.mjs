@@ -136,7 +136,7 @@ test('store reordering preserves other days and financial records settle immedia
  assert.equal(snapshot.entries.find(e=>e.text==='tomorrow').order,0);
  o.addFinancialRecord('Materials','expense',12.5);o.addFinancialRecord('Sale','income',25);
  assert.equal(snapshot.financialRecords.length,2);assert.ok(snapshot.financialRecords[0].createdAt);assert.equal(snapshot.financialRecords[1].amount,25);
- o.addFinancialRecord('Invalid','expense',-1);assert.equal(snapshot.financialRecords.length,2);
+ o.addFinancialRecord('Invalid','expense',-1);assert.equal(snapshot.financialRecords.length,2);o.addBuyItem('Oats');const shopping=snapshot.buyItems[0];o.updateBuyItem(shopping.id,{bought:true});assert.ok(snapshot.buyItems[0].boughtAt);o.updateBuyItem(shopping.id,{bought:false});assert.equal(snapshot.buyItems[0].boughtAt,undefined);
 });
 
 const {spiralPoint,zoomAt,shouldCaptureTyping}=load('navigation');
@@ -167,4 +167,18 @@ test('today focuses without text and find retains date focus semantics',()=>{
 });
 test('legacy amounts migrate once and shopping checks cannot alter the ledger',()=>{
  const data={buyItems:[{id:'a',text:'Materials',kind:'expense',amount:12,bought:true,createdAt:1}]};const records=preservedFinances(data);assert.equal(records.length,1);assert.equal(records[0].amount,12);data.buyItems[0].bought=false;assert.equal(records[0].amount,12);assert.equal(preservedFinances({...data,financialRecords:records}).length,1);
+});
+
+test('upcoming weekdays are strictly upcoming and yesterday remains available',()=>{
+ const base=new Date(2026,10,17,12);assert.equal(resolveDay('Sunday',base),'2026-11-22');assert.equal(resolveDay('Tuesday',base),'2026-11-24');assert.equal(resolveDay('yesterday',base),'2026-11-16');
+});
+test('focused scale is half the previous scale and invalid zoom input is ignored',()=>{
+ const c=focusCamera('2026-11-17',.25);assert.ok(Math.abs(c.k*.25-1.1)<1e-8);const camera={k:1,x:0,y:0};assert.equal(zoomAt(camera,NaN,{x:0,y:0}),camera);assert.equal(zoomAt(camera,10,{x:Infinity,y:0}),camera);
+});
+const {visibleGathering,matchesLens}=load('navigation');
+test('completed gathering leaves the next day while unchecked items persist',()=>{
+ const boughtAt=new Date(2026,10,17,13).getTime();assert.equal(visibleGathering({bought:true,boughtAt},'2026-11-17'),true);assert.equal(visibleGathering({bought:true,boughtAt},'2026-11-18'),false);assert.equal(visibleGathering({bought:false,boughtAt},'2026-11-18'),true);
+});
+test('season and year lenses filter actual records',()=>{
+ assert.equal(matchesLens('2026-11-17',2026,3),true);assert.equal(matchesLens('2026-11-17',2026,1),false);assert.equal(matchesLens('2025-11-17',2026),false);assert.equal(matchesLens('2026-12-10',2026,0),true);
 });

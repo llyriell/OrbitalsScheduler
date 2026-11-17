@@ -23,3 +23,11 @@ Shopping and finances are independent collections. Item words toggle checked sta
 Data remains local to this browser using orbitals.v1. Upcoming is an in-app preview. Visual sources reused at Lyriel's request: evolresearch's eye/iris artwork and animation; lyrielle's CRT transmission frame.
 
 Checks: npm run typecheck; npm run build; node --test tests/planner.test.mjs.
+
+## Held eye and connection drawing
+
+Entering the eye fades surrounding controls while preserving the same Iris instance and camera. The title and tools appear without a page transition. Connect enables ordered star selection, a live draft path, and naming/saving the constellation. Seasonal and year lenses filter real records. Clear discards only the unsaved draft.
+
+Day focus uses half the previous magnification. Weekday visits select the strictly upcoming occurrence; yesterday remains supported. The image grows slightly more opaque with zoom and has a stronger pulse. Wheel updates reject non-finite measurements, and panning snapshots its pointer anchor before queued state updates to avoid release-time failures.
+
+Completed shopping items remain visible on their checked local day, then leave the active list the following day. Unchecked items persist. Completed records are retained in archives rather than deleted. The event form submits on Enter; Shift+Enter allows note newlines. The event form and right-edge gathering/finance drawer share the translucent CRT styling. Monthly ledger organization remains a later refinement.

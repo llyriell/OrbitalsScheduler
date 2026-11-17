@@ -1,6 +1,7 @@
 import { useEffect,useRef } from 'react';
 // Adapted from evolresearch/station.js: counter-rotating rings and a double heartbeat.
-export function EyeAtmosphere(){
+export function EyeAtmosphere({zoomLevel=1}:{zoomLevel?:number}){
+ const zoomRef=useRef(zoomLevel);zoomRef.current=zoomLevel;
  const ref=useRef<HTMLDivElement>(null);
  useEffect(()=>{
  const host=ref.current;if(!host)return;
@@ -12,7 +13,7 @@ export function EyeAtmosphere(){
  const navigate=(event:Event)=>{const delta=(event as CustomEvent<{delta:number}>).detail.delta;navigation=Math.max(-3,Math.min(3,navigation-delta/180))};
  const tick=(now:number)=>{if(motion.matches)return;const dt=Math.min(.05,(now-last)/1000);last=now;navigation*=Math.exp(-dt*2.2);const boost=Math.min(1,Math.abs(navigation));speed+=(1.8+navigation*65-speed)*Math.min(1,dt*8);angle+=speed*dt;glow+=(boost*boost*(3-2*boost)-glow)*Math.min(1,dt*6);
  const phase=now%4200/4200;const beat=Math.max(Math.exp(-Math.pow((phase-.12)/.085,2)),Math.exp(-Math.pow((phase-.22)/.1,2)));
- if(background)background.style.opacity=String(.17+beat*.04);
+ if(background)background.style.opacity=String(.18+Math.min(.08,Math.max(0,Math.log2(zoomRef.current))*0.02)+beat*.065);
  layers.forEach((el,i)=>{const ring=rings[i];el.style.transform='translate(-50%,-50%) rotate('+ring.direction*angle*ring.factor+'deg)';el.style.opacity=String(Math.min(.9,ring.opacity*(1+1.1*glow)))});
  raf=requestAnimationFrame(tick)};
  const change=()=>{cancelAnimationFrame(raf);if(!motion.matches){last=performance.now();raf=requestAnimationFrame(tick)}};

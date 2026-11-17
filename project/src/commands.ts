@@ -5,6 +5,7 @@ export function resolveDay(value:string,base=new Date()):string|null{
  const key=value.trim().toLowerCase();const d=new Date(base.getFullYear(),base.getMonth(),base.getDate());
  if(key==='today')return local(d);if(key==='tomorrow'){d.setDate(d.getDate()+1);return local(d)}if(key==='yesterday'){d.setDate(d.getDate()-1);return local(d)}
  if(/^\d{4}-\d{2}-\d{2}$/.test(key)){const t=Date.parse(key);return Number.isFinite(t)&&new Date(t).toISOString().slice(0,10)===key?key:null}
+ const weekdays=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];const weekday=weekdays.findIndex(w=>w===key||w.slice(0,3)===key);if(weekday>=0){const step=(weekday-d.getDay()+7)%7||7;d.setDate(d.getDate()+step);return local(d)}
  const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
  const m=key.match(/^([a-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?$/);
  if(m){const month=months.findIndex(v=>v===m[1]||v.slice(0,3)===m[1]);if(month<0)return null;const year=m[3]?Number(m[3]):base.getFullYear();const parsed=new Date(year,month,Number(m[2]));return parsed.getFullYear()===year&&parsed.getMonth()===month&&parsed.getDate()===Number(m[2])?local(parsed):null}

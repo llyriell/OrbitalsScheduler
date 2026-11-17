@@ -60,7 +60,7 @@ function sanitize(raw: unknown): AppData {
     entries: Array.isArray(d.entries) ? d.entries : [],
     traces: Array.isArray(d.traces) ? d.traces : [],
     series: Array.isArray(d.series) ? d.series : [],
-    buyItems: Array.isArray(d.buyItems) ? d.buyItems : [],
+    buyItems: Array.isArray(d.buyItems) ? d.buyItems.map(b=>b.bought&&!b.boughtAt?{...b,boughtAt:Date.now()}:b) : [],
     constellations: Array.isArray(d.constellations) ? d.constellations : [],
     moods: d.moods && typeof d.moods === 'object' ? d.moods : {},
     moodJournal: Array.isArray(d.moodJournal) ? d.moodJournal : Object.entries(d.moods??{}).map(([date,mood])=>({...mood,id:'legacy_'+date,date})),
@@ -277,7 +277,7 @@ export function useOrbitals() {
   const updateBuyItem = useCallback((id: string, patch: Partial<BuyItem>) => {
     setData((d) => ({
       ...d,
-      buyItems: d.buyItems.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+      buyItems: d.buyItems.map((b) => (b.id === id ? { ...b, ...patch, boughtAt: patch.bought === true ? Date.now() : patch.bought === false ? undefined : b.boughtAt } : b)),
     }));
   }, []);
 

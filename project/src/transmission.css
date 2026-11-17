@@ -147,3 +147,22 @@
 @media(prefers-reduced-motion:reduce){.ghost-task-preview{animation:none}}
 
 .camera-atmosphere{position:absolute;inset:0;pointer-events:none;will-change:transform}.iris-field:active{cursor:grabbing}.purchase-list .is-bought .purchase-word{opacity:.48;text-decoration:line-through}.purchase-list .is-bought .task-light{background:#c2d9c8;box-shadow:0 0 8px #c2d9c840}.void-explorer footer nav{display:inline-flex;gap:15px;margin-right:25px}.void-explorer footer nav button{padding:4px;color:#a5c5b1}.void-explorer footer nav button[aria-pressed=true]{border-bottom:1px solid #c3dbc7}
+
+.eye-mode>.notebook,.eye-mode>.command-console,.eye-mode>.gathering-rail,.eye-mode>.sky-transmission,.eye-mode .sky-top,.eye-mode .sky-caption{opacity:0!important;visibility:hidden;pointer-events:none!important;transition:opacity .4s ease,visibility .4s}
+.held-eye-heading{position:fixed;top:35px;left:45px;right:45px;z-index:35;display:flex;justify-content:space-between;align-items:flex-start;animation:eye-tools-reveal .7s ease}
+.held-eye-heading p{font:9px ui-monospace,Consolas,monospace;letter-spacing:.2em;text-transform:uppercase;color:#93ada0;margin:0 0 15px}
+.held-eye-heading h1{font:italic 23px Georgia,serif;font-weight:normal;color:#c9d9cd;margin:0 0 13px}
+.held-eye-heading span{font:10px/1.8 ui-monospace,Consolas,monospace;color:#85a391}
+.held-eye-heading>button{padding:10px;font-size:23px;color:#a9c3b2}
+.eye-tools{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 70px);width:max-content;z-index:35;display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:16px 22px;background:#11201955;border:1px solid #bad0c325;backdrop-filter:blur(10px);font:10px ui-monospace,Consolas,monospace;color:#abc5b4;animation:eye-tools-reveal .7s ease}
+.eye-tools label{display:flex;align-items:center;gap:9px}.eye-tools select,.eye-tools input{font:inherit;background:#0c16143d;color:#bbd1c0;border:0;border-bottom:1px solid #accbb438;padding:7px;min-width:0}.eye-tools input[type=number]{width:70px}.eye-tools button{white-space:nowrap}.eye-tools button[aria-pressed=true]{color:#f0fff1}.eye-tools small{white-space:nowrap;color:#789d85}
+@keyframes eye-tools-reveal{from{opacity:0}to{opacity:1}}
+.connection-draft{fill:none;stroke:#e5fbe7;stroke-width:1.5;stroke-dasharray:4 4;pointer-events:none;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 4px #def4da99)}
+.orbital-node.connecting .node-core{fill:#edffee!important;opacity:1!important;r:6}.orbital-node.connecting .node-halo{opacity:1!important}
+.event-transmission{width:min(640px,calc(100vw - 60px));z-index:65}.event-transmission .transmission-inner{padding:22px 25px;max-height:calc(100dvh - 125px)}.event-transmission .feature-page{padding:15px 15px 10px}.event-transmission .feature-page h1{font-size:23px}.event-transmission .quiet-form{margin:18px 0;gap:12px;padding:15px 0}
+.gathering-rail.is-open{background:rgba(194,218,201,.09);border:1px solid #bacfc526;box-shadow:inset 0 0 30px #cce2d50a;backdrop-filter:blur(9px);border-radius:2px}
+.gathering-rail.is-open:after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,#070f0b16 3px,transparent 4px);z-index:3}
+.gathering-rail .rail-body:before{content:'';position:sticky;display:block;top:0;left:0;width:14px;height:14px;border-top:1px solid #afc9b980;border-left:1px solid #afc9b980;pointer-events:none}
+.gathering-rail .rail-body>nav{margin-top:-12px}.gathering-rail .feature-page,.gathering-rail .quiet-form input,.gathering-rail .feature-page h1{font-family:ui-monospace,Consolas,monospace}
+@media(max-width:700px){.held-eye-heading{top:25px;left:22px;right:22px}.held-eye-heading h1{font-size:19px;line-height:1.5;max-width:280px}.held-eye-heading span{font-size:9px;display:block;max-width:270px}.eye-tools{bottom:22px;max-width:calc(100vw - 35px);gap:12px;width:calc(100vw - 35px);padding:13px}.eye-tools input[aria-label="Drawn constellation name"]{width:160px}.event-transmission{width:calc(100vw - 32px)}.event-transmission .transmission-inner{padding:20px 12px}}
+@media(prefers-reduced-motion:reduce){.held-eye-heading,.eye-tools{animation:none}.eye-mode>.notebook{transition:none}}
