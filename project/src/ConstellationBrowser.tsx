@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { AppData } from './types';
 import { TransmissionBox } from './TransmissionBox';
-export function ConstellationBrowser({data,onClose,onOpenDay,onSelect}:{data:AppData;onClose:()=>void;onOpenDay:(d:string)=>void;onSelect:(id:string)=>void}){
- const [active,setActive]=useState<string|null>(null);
+export function ConstellationBrowser({data,initialId=null,onClose,onOpenDay,onSelect}:{data:AppData;initialId?:string|null;onClose:()=>void;onOpenDay:(d:string)=>void;onSelect:(id:string)=>void}){
+ const [active,setActive]=useState<string|null>(initialId);
  const constellation=data.constellations.find(c=>c.id===active);
  const stars=constellation?.entryIds.map(id=>data.entries.find(e=>e.id===id));
  return <TransmissionBox className="constellation-transmission" label="Constellations"><button className="detail-close" aria-label="Close constellations" onClick={onClose}>×</button><header><small>orbitals / connections remembered</small><h2>{constellation?.name??'Constellations'}</h2></header>

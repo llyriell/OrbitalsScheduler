@@ -184,3 +184,5 @@ test('season and year lenses filter actual records',()=>{
 });
 
 test('constellation command opens saved connections with singular and plural aliases',()=>{const {parseCommand}=load('commands');assert.equal(parseCommand('constellation').kind,'constellation');assert.equal(parseCommand('constellations').kind,'constellation');});
+
+test('horizon and return open future and recurring panels',()=>{const {parseCommand}=load('commands');assert.equal(parseCommand('horizon').kind,'horizon');assert.equal(parseCommand('return').kind,'return');});

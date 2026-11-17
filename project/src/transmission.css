@@ -182,3 +182,16 @@
 .human-eye-background{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:145%;height:145%;max-width:none;object-fit:contain;opacity:.025;pointer-events:none;z-index:0}
 .evol-iris-background{z-index:1}.evol-eye-breathe{z-index:2}
 @media(max-width:700px){.eye-mode .held-eye-heading{top:90px}.constellation-transmission{right:20px}.constellation-transmission .transmission-inner{max-height:calc(100dvh - 250px)}}
+
+.command-suggestions{position:absolute;top:100%;left:0;right:0;background:#101c18ed;border:1px solid #c4d5c520;padding:8px;backdrop-filter:blur(14px);z-index:5;max-height:45vh;overflow:auto}
+.command-suggestions button{width:100%;display:flex;gap:20px;text-align:left;padding:9px 12px}.command-suggestions button.active,.command-suggestions button:hover{background:#d2e8d310}.command-suggestions strong{font:11px ui-monospace,Consolas,monospace;min-width:130px}.command-suggestions small,.command-suggestions>span{font:9px ui-monospace,Consolas,monospace;color:#8da798}.command-suggestions>span{display:block;padding:8px 12px}
+.constellation-threads .constellation-hit{fill:none;stroke:transparent!important;stroke-width:14px!important;vector-effect:non-scaling-stroke;pointer-events:stroke;cursor:pointer}
+.constellation-threads .constellation-hit:hover,.constellation-threads .constellation-hit:focus-visible{stroke:#d7f4df45!important;stroke-width:5px!important;outline:none}
+.constellation-line-name{pointer-events:none!important;letter-spacing:.1em}
+.returning-backdrop{position:fixed;inset:0;z-index:59;background:#0309079c;backdrop-filter:blur(10px)}
+.returning-transmission{z-index:60;width:min(1050px,calc(100vw - 70px));max-height:calc(100dvh - 130px)}
+.returning-transmission .transmission-inner{max-height:calc(100dvh - 130px);padding:30px;background:#adcbbf12;backdrop-filter:blur(9px)}
+.returning-transmission .feature-page{padding:20px 25px}.returning-transmission .detail-close{z-index:4}
+@media(max-width:700px){.returning-transmission{width:calc(100vw - 30px)}.returning-transmission .transmission-inner{padding:20px 10px}.command-suggestions small{display:none}}
+
+.eye-mode:has(.command-status) .held-eye-heading{top:135px}
