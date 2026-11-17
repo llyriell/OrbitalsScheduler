@@ -62,3 +62,44 @@ test('archives retain multiple skies per day, timestamps, and future events',()=
  assert.match(archive.dayContext(parsed,'2026-11-17'),/Morning/);
  assert.match(archive.dayContext(parsed,'2026-11-17'),/Evening/);
 });
+
+const {parseCommand,recallEntries}=load('commands');
+const {journalMoment,clockText}=load('journalTime');
+test('commands accept bracket syntax, preserve text, and reject impossible dates',()=>{
+ assert.equal(parseCommand('add [Sew the cuff]').text,'Sew the cuff');
+ assert.equal(parseCommand('recall []').query,'');
+ assert.equal(parseCommand('recall [LAVENDER]').query,'LAVENDER');
+ assert.equal(parseCommand('go [2026-02-30]').kind,'error');
+ assert.equal(parseCommand('go [2026-12-10]').date,'2026-12-10');
+ assert.equal(parseCommand('add []').kind,'error');
+});
+test('recall finds task titles and notes without changing entries',()=>{
+ const entries=[{id:'a',text:'Make milk',note:'Dried lavender stalks',createdAt:1},{id:'b',text:'Lavender garden',note:'',createdAt:2}];
+ assert.equal(recallEntries(entries,'LAVENDER').length,2);
+ assert.equal(recallEntries(entries,'stalks')[0].id,'a');
+ assert.equal(recallEntries(entries,'').length,2);
+ assert.equal(entries[0].id,'a');
+});
+test('journal moment preserves local date and second at the start, across midnight',()=>{
+ const captured=new Date(2026,10,17,23,59,58).getTime();
+ assert.equal(journalMoment(captured).date,'2026-11-17');
+ assert.equal(journalMoment(captured).recordedAt,captured);
+ assert.equal(clockText(captured),'23:59:58');
+ assert.equal(journalMoment(captured+5000).date,'2026-11-18');
+});
+test('store saves held timestamps and creates command orbitals as undated',()=>{
+ let snapshot={...empty};
+ const module={exports:{}};
+ const code=ts.transpileModule(readFileSync(resolve('src/store.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const fakeReact={useCallback:f=>f,useEffect:()=>{},useState:init=>{snapshot=init();return [snapshot,update=>{snapshot=typeof update==='function'?update(snapshot):update}]}};
+ vm.runInNewContext(code,{module,exports:module.exports,require:p=>p==='react'?fakeReact:load(p.slice(2)),Date,Math,JSON,crypto:globalThis.crypto,localStorage:{getItem:()=>null}});
+ const o=module.exports.useOrbitals();const timestamp=new Date(2026,10,17,23,59,58).getTime();
+ o.addMood('2026-11-17',{icon:'clear',text:'A held moment'},timestamp);
+ o.addMood('2026-11-18',{icon:'cloudy'},timestamp+5000);
+ assert.equal(snapshot.moodJournal.length,2);
+ assert.equal(snapshot.moodJournal[0].recordedAt,timestamp);
+ assert.equal(snapshot.moodJournal[0].date,'2026-11-17');
+ o.addOrbit('A future possibility');
+ assert.equal(snapshot.entries[0].orbiting,true);
+ assert.equal(upcomingOn(snapshot,snapshot.entries[0].date).length,0);
+});

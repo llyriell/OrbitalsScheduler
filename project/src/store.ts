@@ -106,6 +106,11 @@ export function useOrbitals() {
     return created;
   }, []);
 
+  const addOrbit = useCallback((text:string) => {
+    if(!text.trim())return;
+    const entry:Entry={id:uid('e'),text:text.trim(),date:todayISO(),orbiting:true,done:false,order:0,createdAt:Date.now()};
+    setData(d=>({...d,entries:[...d.entries,entry]}));
+  },[]);
   const updateEntry = useCallback((id: string, patch: Partial<Entry>) => {
     setData((d) => ({
       ...d,
@@ -187,8 +192,8 @@ export function useOrbitals() {
     });
   }, []);
 
-  const addMood = useCallback((date: string, mood: Mood) => {
-    const log = {...mood,id:uid('m'),date,recordedAt:Date.now()};
+  const addMood = useCallback((date: string, mood: Mood, recordedAt = Date.now()) => {
+    const log = {...mood,id:uid('m'),date,recordedAt};
     setData(d=>({...d,moods:{...d.moods,[date]:mood},moodJournal:[...d.moodJournal,log]}));
   },[]);
   const addEvent = useCallback((date:string,text:string,time?:string,note?:string)=>{
@@ -304,6 +309,7 @@ export function useOrbitals() {
   return {
     data,
     addEntries,
+    addOrbit,
     updateEntry,
     deleteEntry,
     moveEntry,
