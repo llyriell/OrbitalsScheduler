@@ -153,8 +153,8 @@ test('type-to-command excludes editors, shortcuts, and composing text',()=>{
  const e={key:'r',ctrlKey:false,metaKey:false,altKey:false,isComposing:false};
  assert.equal(shouldCaptureTyping(e,false),true);assert.equal(shouldCaptureTyping(e,true),false);assert.equal(shouldCaptureTyping({...e,ctrlKey:true},false),false);assert.equal(shouldCaptureTyping({...e,isComposing:true},false),false);assert.equal(shouldCaptureTyping({...e,key:'ArrowLeft'},false),false);
 });
-test('visit and find focus dates while connect opens constellation work',()=>{
- assert.equal(parseCommand('go [2026-12-10]').kind,'error');assert.equal(parseCommand('find [2026-12-10]').date,'2026-12-10');assert.equal(parseCommand('visit [2026-12-10]').date,'2026-12-10');assert.equal(parseCommand('connect').kind,'connect');
+test('visit replaces find while connect opens constellation work',()=>{
+ assert.equal(parseCommand('go [2026-12-10]').kind,'error');assert.equal(parseCommand('find [2026-12-10]').kind,'error');assert.equal(parseCommand('visit [2026-12-10]').date,'2026-12-10');assert.equal(parseCommand('connect').kind,'connect');
 });
 
 const {focusCamera}=load('navigation');
@@ -162,8 +162,8 @@ const {preservedFinances}=load('finance');
 test('day focusing centers the day with a useful close scale',()=>{
  const camera=focusCamera('2026-11-17',.25,5);const point=spiralPoint('2026-11-17',12+4*9);assert.ok(Math.abs((point.x-450)*.25*camera.k+camera.x)<1e-8);assert.ok(Math.abs((point.y-450)*.25*camera.k+camera.y)<1e-8);assert.ok(camera.k>1);
 });
-test('today focuses without text and find retains date focus semantics',()=>{
- assert.equal(parseCommand('today').kind,'visit');assert.equal(parseCommand('today [sew]').text,'sew');assert.equal(parseCommand('find [December 10]').kind,'visit');
+test('today focuses without text and visit retains date focus semantics',()=>{
+ assert.equal(parseCommand('today').kind,'visit');assert.equal(parseCommand('today [sew]').text,'sew');assert.equal(parseCommand('visit [December 10]').kind,'visit');
 });
 test('legacy amounts migrate once and shopping checks cannot alter the ledger',()=>{
  const data={buyItems:[{id:'a',text:'Materials',kind:'expense',amount:12,bought:true,createdAt:1}]};const records=preservedFinances(data);assert.equal(records.length,1);assert.equal(records[0].amount,12);data.buyItems[0].bought=false;assert.equal(records[0].amount,12);assert.equal(preservedFinances({...data,financialRecords:records}).length,1);
@@ -186,3 +186,42 @@ test('season and year lenses filter actual records',()=>{
 test('constellation command opens saved connections with singular and plural aliases',()=>{const {parseCommand}=load('commands');assert.equal(parseCommand('constellation').kind,'constellation');assert.equal(parseCommand('constellations').kind,'constellation');});
 
 test('horizon and return open future and recurring panels',()=>{const {parseCommand}=load('commands');assert.equal(parseCommand('horizon').kind,'horizon');assert.equal(parseCommand('return').kind,'return');});
+
+const {carryForward,seedConstellations,orderedDay,moonPhase,planetPoint,escapeAction}=load('celestial');
+test('carryover preserves unlit history, repeats across missed days, and is idempotent',()=>{
+ const entry={id:'root',text:'Sew',date:'2026-11-15',done:false,orbiting:false,order:0,createdAt:1,note:'keep this'};
+ const d={...empty,entries:[entry]};
+ const next=carryForward(d,'2026-11-17');assert.equal(next.entries.length,3);assert.equal(next.entries[0].done,false);assert.equal(next.entries[0].date,'2026-11-15');assert.equal(next.entries[2].date,'2026-11-17');assert.equal(next.entries[2].carryRoot,'root');assert.equal(next.entries[2].note,'keep this');assert.equal(carryForward(next,'2026-11-17'),next);
+ const completed={...next,entries:next.entries.map(e=>e.date==='2026-11-17'?{...e,done:true}:e)};
+ assert.equal(carryForward(completed,'2026-11-18'),completed);
+});
+test('carryover excludes appointments, loose orbitals, completed tasks, and dismissed roots',()=>{
+ const task={id:'a',text:'Task',date:'2026-11-16',done:false,orbiting:false,order:0,createdAt:1};
+ for(const change of [{kind:'event'},{orbiting:true},{done:true}]){const d={...empty,entries:[{...task,...change}]};assert.equal(carryForward(d,'2026-11-17'),d)}
+ const d={...empty,entries:[task],dismissedCarryRoots:['a']};assert.equal(carryForward(d,'2026-11-17'),d);
+});
+test('completed tasks stay below open tasks without losing their manual order',()=>{
+ const d=[{id:'done',date:'2026-11-17',done:true,order:0},{id:'b',date:'2026-11-17',done:false,order:2},{id:'a',date:'2026-11-17',done:false,order:1}];assert.equal(orderedDay(d,'2026-11-17').map(e=>e.id).join(','),'a,b,done');
+});
+test('starter constellations are empty, never duplicated, and not recreated after deletion',()=>{
+ const d=seedConstellations({...empty,constellations:[{id:'g',name:'Garden',entryIds:[],createdAt:0}]});assert.equal(d.constellations.map(c=>c.name).join(','),'Garden,Home,Evol');assert.equal(seedConstellations(d),d);const removed={...d,constellations:[]};assert.equal(seedConstellations(removed).constellations.length,0);
+});
+test('orbital rungs slow outwards and come back into alignment',()=>{
+ const root={x:0,y:0,a:0};const aligned=planetPoint(root,20,0,9,0);assert.equal(aligned.x,20);assert.equal(aligned.y,0);const inner=planetPoint(root,20,0,Math.PI/6,1);const outer=planetPoint(root,40,1,Math.PI/6,1);assert.ok(Math.atan2(inner.y,inner.x)>Math.atan2(outer.y,outer.x));for(let slot=0;slot<3;slot++){const p=planetPoint(root,20,slot,Math.PI*4,1);assert.ok(Math.abs(p.y)<1e-8)}
+});
+test('Escape advances through clearing, leaving Connect, full eye, then reset',()=>{
+ assert.equal(escapeAction(true,false,true,false),'clear-connect');assert.equal(escapeAction(true,true,true,false),'leave-connect');assert.equal(escapeAction(false,false,true,false),'overview');assert.equal(escapeAction(false,false,true,true),'reset');
+});
+test('visit is the sole date command and blood moon marks the selected day',()=>{
+ assert.equal(parseCommand('find [tomorrow]').kind,'error');assert.equal(parseCommand('visit [yesterday]').kind,'visit');assert.equal(parseCommand('blood moon').kind,'blood-moon');
+});
+test('lunar phase cycles and new archive metadata survive export and import',()=>{
+ const a=moonPhase('2026-11-17');assert.ok(a.index>=0&&a.index<8);assert.ok(a.phase>=0&&a.phase<1);
+ const d={...empty,dayMoons:{'2026-11-17':'blood'},starterConstellationsAdded:true,dismissedCarryRoots:['a'],deletedEntries:[]};const out=archive.parseArchive(archive.exportArchive(d));assert.equal(out.dayMoons['2026-11-17'],'blood');assert.equal(out.starterConstellationsAdded,true);assert.equal(out.dismissedCarryRoots[0],'a');
+});
+
+test('unfinished recurring occurrences carry forward without duplicating later scheduled returns',()=>{
+ const recurring={id:'s1',text:'Water',seriesId:'s',date:'2026-11-15',done:false,orbiting:false,order:0,createdAt:1};
+ const d=carryForward({...empty,entries:[recurring]},'2026-11-17');assert.equal(d.entries.length,3);assert.equal(d.entries[2].seriesId,'s');
+ const later={...recurring,id:'s2',date:'2026-11-17'};const next=carryForward({...empty,entries:[recurring,later]},'2026-11-18');assert.equal(next.entries.filter(e=>e.date==='2026-11-17').length,1);assert.equal(next.entries.filter(e=>e.date==='2026-11-18').length,1);
+});

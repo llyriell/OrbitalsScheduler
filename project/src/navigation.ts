@@ -5,5 +5,8 @@ export function visibleGathering(item:{bought:boolean;boughtAt?:number},today:st
 export function matchesLens(date:string,year?:number,season?:number){if(!date)return false;const [y,m]=date.split('-').map(Number);return (year===undefined||y===year)&&(season===undefined||Math.floor((m%12)/3)===season)}
 export function shouldCaptureTyping(e:{key:string;ctrlKey:boolean;metaKey:boolean;altKey:boolean;isComposing:boolean},editing:boolean){return !editing&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.isComposing&&e.key.length===1}
 
-export type ViewRequest={kind:'reset'|'day';date?:string;nonce:number};
+export type ViewRequest={kind:'reset'|'day'|'season'|'year'|'entry';date?:string;year?:number;entryId?:string;nonce:number};
 export function focusCamera(date:string,baseZoom:number,count=1){const p=spiralPoint(date,12+Math.max(0,count-1)*9);const k=Math.min(24,1.1/baseZoom);const zoom=baseZoom*k;return {k,x:-(p.x-450)*zoom,y:-(p.y-450)*zoom}}
+
+export function seasonCamera(date:string,baseZoom:number){const [year,month]=date.split('-').map(Number);const midMonth=Math.floor((month-1)/3)*3+2;const p=spiralPoint(year+'-'+String(midMonth).padStart(2,'0')+'-15');const zoom=Math.min(.48,400/Math.max(350,p.r));const k=zoom/baseZoom;return {k,x:-(p.x-450)*zoom*.72,y:-(p.y-450)*zoom*.72}}
+export function yearCamera(year:number,baseZoom:number){const r=Math.max(46,(year-ORIGIN_YEAR+1)*46);return {k:Math.min(3,320/r)/baseZoom,x:0,y:0}}

@@ -1,3 +1,4 @@
+import { carryForward,seedConstellations } from './celestial';
 import { preservedFinances } from './finance';
 import { moveBefore } from './commands';
 import { seriesOn } from './schedule';
@@ -56,6 +57,7 @@ function sanitize(raw: unknown): AppData {
   if (!raw || typeof raw !== 'object') return { ...emptyData };
   const d = raw as Partial<ArchiveData> & Partial<AppData>;
   return {
+    dayMoons:d.dayMoons??{},starterConstellationsAdded:d.starterConstellationsAdded,dismissedCarryRoots:d.dismissedCarryRoots??[],deletedEntries:d.deletedEntries??[],
     financialRecords: preservedFinances(d),
     entries: Array.isArray(d.entries) ? d.entries : [],
     traces: Array.isArray(d.traces) ? d.traces : [],
@@ -78,7 +80,8 @@ export function loadData(): AppData {
 }
 
 export function useOrbitals() {
-  const [data, setData] = useState<AppData>(() => loadData());
+  const [data, setData] = useState<AppData>(() => carryForward(seedConstellations(loadData()),todayISO()));
+  useEffect(()=>{const tick=()=>setData(d=>carryForward(seedConstellations(d),todayISO()));tick();const timer=setInterval(tick,30000);return()=>clearInterval(timer)},[]);
   useEffect(()=>{setData(d=>Array.isArray(d.financialRecords)?d:{...d,financialRecords:preservedFinances(d)})},[]);
 
   useEffect(() => {
@@ -115,7 +118,7 @@ export function useOrbitals() {
   const addOrbit = useCallback((text:string) => {
     if(!text.trim())return;
     const entry:Entry={id:uid('e'),text:text.trim(),date:todayISO(),orbiting:true,done:false,order:0,createdAt:Date.now()};
-    setData(d=>({...d,entries:[...d.entries,entry]}));
+    setData(d=>({...d,entries:[...d.entries,entry]}));return entry.id;
   },[]);
   const updateEntry = useCallback((id: string, patch: Partial<Entry>) => {
     setData((d) => ({
@@ -124,13 +127,9 @@ export function useOrbitals() {
     }));
   }, []);
 
-  const deleteEntry = useCallback((id: string) => {
-    setData((d) => ({
-      ...d,
-      entries: d.entries.filter((e) => e.id !== id),
-    }));
-  }, []);
-
+  const deleteEntry=useCallback((id:string)=>{setData(d=>{const entry=d.entries.find(e=>e.id===id);if(!entry)return d;return {...d,entries:d.entries.filter(e=>e.id!==id),deletedEntries:[...(d.deletedEntries??[]),entry],dismissedCarryRoots:[...new Set([...(d.dismissedCarryRoots??[]),entry.carryRoot??entry.id])]}})},[]);
+  const restoreEntry=useCallback((id:string)=>{setData(d=>{const entry=d.deletedEntries?.find(e=>e.id===id);if(!entry)return d;return {...d,entries:[...d.entries,entry],deletedEntries:d.deletedEntries?.filter(e=>e.id!==id),dismissedCarryRoots:d.dismissedCarryRoots?.filter(root=>root!==(entry.carryRoot??entry.id))}})},[]);
+  const bloodMoon=useCallback((date:string)=>setData(d=>({...d,dayMoons:{...d.dayMoons,[date]:'blood'}})),[]);
   const moveEntry = useCallback((id: string, toDate: string) => {
     setData((d) => {
       const entry = d.entries.find((e) => e.id === id);
@@ -318,7 +317,7 @@ export function useOrbitals() {
     addEntries,
     addOrbit,
     updateEntry,
-    deleteEntry,
+    deleteEntry,restoreEntry,bloodMoon,
     moveEntry,
     letOrbit,
     recallOrbital,
