@@ -1,29 +1,25 @@
 # The remembering eye
 
-The iris is centered behind a translucent planner. The spiral starts at 2000; each calendar year completes a turn 46 drawing units farther outward. Scroll over the eye to zoom the record layer around the pointer. The image and eye symbol remain fixed in position and size. Only this navigation scroll drives the eye symbol's spinning response.
+The spiral begins at 2000. Each year completes one outward turn. Wheel scrolling zooms around the pointer; holding the right mouse button and dragging pans the records. The bloom and image follow the translated record center but keep their size. The eye has a slow idle turn plus scroll-responsive rotation. Loose orbitals revolve slowly and pause under the pointer. Reduced motion suppresses animation.
 
-Loose orbitals rotate around the outer periphery on a three-minute cycle, pausing under the pointer. Reduced motion stops that rotation and eye animation. Incomplete stars remain dimmer than fulfilled ones.
+Escape resets record pan and zoom to the overview, returns the planner to today, and dismisses task details. It does not delete records. Main-screen scale tabs are removed: the today/season/years controls remain only in full-screen eye exploration, where they are viewing scales rather than date filters.
 
-Hover previews are faint, small, and non-interactive at the right. Clicking a star pins the editable transmission frame into the right-hand working area. Leaving that frame or pressing Escape dismisses it. Clicking daily task words toggles completion; dragging reorders the selected day's list. Alt+Up/Down also reorders.
-
-The right-edge drawer holds gathering and finance records. Item words toggle bought/unbought; marking bought also opens the cost field. Unknown costs remain blank until recorded. Completed purchases and settled income/expense records feed the financial totals. Recording an expense never executes a financial transaction.
-
-Ordinary typing goes to the command line unless an input, textarea, selection control, or editable text is focused. Shortcuts and composing text are left alone. Commands execute only on submission:
-
-- recall [key]: search titles and notes; recall [] shows all
-- add [task]: create an undated orbital
-- today [task]: add to today's list
+Commands:
+- today: focus today in both planner and eye
+- today [task]: add a task, then focus today
+- find [day] or visit [day]: visit and focus a day (ISO, named month/day, today/tomorrow/yesterday)
+- recall [key]: search task titles and notes
+- add [task]: create a loose orbital
 - gather [item]: add to the shopping checklist
-- visit [day]: ISO date, named month/day, or today/tomorrow/yesterday
 - connect: open constellation connections
-- orbit: recall loose orbitals
-- eye: enter full-screen exploration
-- help: show commands
+- orbit, eye, help: exploration and command help
 
-Escape closes output first and clears retained input on another press. It also returns the viewed day to today. The bottom sky bar captures the time when writing begins and preserves that local day and timestamp when sent, including across midnight.
+Ordinary typing enters the command line outside explicit editors. Escape closes command output, then clears retained input on another press.
 
-Storage uses the existing browser-local orbitals.v1 key. Legacy moods migrate without invented timestamps. Archive import/export includes all journal records and events. Upcoming is an in-app tomorrow preview, not an external notification.
+The everlasting present supports task-word completion toggles and drag ordering; Alt+Up/Down also reorders. Iris hover previews are non-interactive ghosts; click a star to pin its right-hand working frame. Journal history uses the same translucent CRT frame. The bottom sky bar holds the starting timestamp while writing, preserving its local date across midnight.
 
-Visual sources reused at Lyriel's request: evolresearch's eye symbol, iris image, counter-rotation and heartbeat; lyrielle's translucent CRT transmission frame, corner marks and expansion. Decorative image layers are separate from navigable records.
+Shopping and finances are independent collections. Item words toggle checked state without asking for money or changing financial totals. The finance form records expense/income amount and a short note such as groceries, materials, selling, TenderMends, or Dash. Existing recorded amounts migrate once into the financial collection; later checklist toggles do not change them. Archives include the independent ledger.
 
-Checks from project/: npm run typecheck; npm run build; node --test tests/planner.test.mjs.
+Data remains local to this browser using orbitals.v1. Upcoming is an in-app preview. Visual sources reused at Lyriel's request: evolresearch's eye/iris artwork and animation; lyrielle's CRT transmission frame.
+
+Checks: npm run typecheck; npm run build; node --test tests/planner.test.mjs.

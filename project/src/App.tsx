@@ -1,3 +1,4 @@
+import type { ViewRequest } from './navigation';
 import { TransmissionBox } from './TransmissionBox';
 import { GatheringRail } from './GatheringRail';
 import { Fold } from './Fold';
@@ -22,7 +23,8 @@ export default function App() {
  const o = useOrbitals();
  const [date,setDate]=useState(todayISO);
  const [panel,setPanel]=useState<Panel>(null);
- const [scale,setScale]=useState<'today'|'season'|'years'>('today');
+ const [viewRequest,setViewRequest]=useState<ViewRequest>({kind:'reset',nonce:0});
+ const focusDay=(d:string)=>{setDate(d);closeNode();setViewRequest(r=>({kind:'day',date:d,nonce:r.nonce+1}))};
  const [draft,setDraft]=useState('');
  const [selected,setSelected]=useState<string|null>(null);
  const [hovered,setHovered]=useState<string|null>(null);
@@ -48,7 +50,7 @@ export default function App() {
  const add=()=>{if(draft.trim()){o.addEntries(date,draft.split(/\r?\n/));setDraft('')}};
  const exportData=()=>{const blob=new Blob([JSON.stringify({schema:'orbitals.archive',version:1,exportedAt:new Date().toISOString(),...o.data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='orbitals-archive.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
  return <div className="iris-app transmission-layout">
-  <CommandLine entries={o.data.entries} onAddOrbit={o.addOrbit} onAddToday={t=>o.addEntries(todayISO(),[t])} onGather={t=>o.addBuyItem(t)} onGo={d=>{setDate(d);setSelected(null)}} onEye={()=>setVoidOpen(true)} onConnect={()=>setPanel('constellations')} onEscape={()=>{setDate(todayISO());closeNode();setPanel(null);setVoidOpen(false)}} onSelect={id=>{pinNode(id);const e=o.data.entries.find(v=>v.id===id);if(e&&!e.orbiting)setDate(e.date)}}/>
+  <CommandLine entries={o.data.entries} onAddOrbit={o.addOrbit} onAddToday={t=>{o.addEntries(todayISO(),[t]);focusDay(todayISO())}} onGather={t=>o.addBuyItem(t)} onGo={focusDay} onEye={()=>setVoidOpen(true)} onConnect={()=>setPanel('constellations')} onEscape={()=>{setDate(todayISO());setViewRequest(r=>({kind:'reset',nonce:r.nonce+1}));closeNode();setPanel(null);setVoidOpen(false)}} onSelect={id=>{pinNode(id);const e=o.data.entries.find(v=>v.id===id);if(e&&!e.orbiting)setDate(e.date)}}/>
   <aside className="notebook">
    <header className="wordmark">orbitals<span>a life, unfolding</span></header>
    <div className="date-line"><button aria-label="Previous day" onClick={()=>setDate(addDaysISO(date,-1))}><ArrowLeft size={15}/></button><label>{format}<input aria-label="Choose day" type="date" value={date} onChange={e=>e.target.value&&setDate(e.target.value)}/></label><button aria-label="Next day" onClick={()=>setDate(addDaysISO(date,1))}><ArrowRight size={15}/></button></div>
@@ -64,13 +66,13 @@ export default function App() {
   </aside>
   <main className="sky-room">
    <div className="sky-top"><span>{date.slice(0,4)} <i>·</i> {study?'a study of a possible sky':'your unfolding sky'}</span><div className="sky-top-actions"><button onClick={()=>setPanel('constellations')}>constellations ↗</button><button onClick={()=>setVoidOpen(true)}>enter the eye ⤢</button></div></div>
-   <Iris data={o.data} date={date} selected={selected??hovered} onSelect={pinNode} onHover={previewNode} scale={scale} study={study}/>
-   <div className="sky-caption"><span>scroll to travel · one turn, one year</span><button className="text-link" onClick={()=>setStudy(!study)}>{study?'return to my sky':'explore a sample sky'}</button></div>
+   <Iris data={o.data} date={date} selected={selected??hovered} onSelect={pinNode} onHover={previewNode} viewRequest={viewRequest} scale="years" study={study}/>
+   <div className="sky-caption"><span>scroll to zoom · right-drag to pan</span><button className="text-link" onClick={()=>setStudy(!study)}>{study?'return to my sky':'explore a sample sky'}</button></div>
    {chosen&&!selected&&<div className="ghost-task-preview" aria-hidden="true"><small>{chosen.orbiting?'in orbit':chosen.date} · click star to hold</small><strong>{chosen.text}</strong>{chosen.note&&<p>{chosen.note}</p>}</div>}
    {chosen&&selected&&<TransmissionBox key={chosen.id} className="task-transmission" label="Selected orbital" onEnter={clearHover} onLeave={closeNode}><button className="detail-close" aria-label="Close orbital" onClick={closeNode}><X size={16}/></button><small>{chosen.orbiting?'undated · in orbit':chosen.date} · {chosen.done?'fulfilled':'unfolding'}</small><input aria-label="Orbital title" value={chosen.text} onChange={e=>o.updateEntry(chosen.id,{text:e.target.value})}/><textarea aria-label="Orbital note" placeholder="leave a little trace…" value={chosen.note??''} onChange={e=>o.updateEntry(chosen.id,{note:e.target.value})}/><div className="detail-actions"><button onClick={()=>o.updateEntry(chosen.id,{done:!chosen.done})}>{chosen.done?'reopen':'mark fulfilled'}</button>{chosen.orbiting?<button onClick={()=>o.recallOrbital(chosen.id,date)}>bring into today</button>:<button onClick={()=>o.letOrbit(chosen.id)}><Wind size={13}/> let orbit</button>}</div><label className="move-date">return on <input aria-label="Move orbital to date" type="date" value={chosen.orbiting?'':chosen.date??''} onChange={e=>{if(e.target.value){if(chosen.orbiting)o.recallOrbital(chosen.id,e.target.value);else o.moveEntry(chosen.id,e.target.value)}}}/></label></TransmissionBox>}
-   <footer className="sky-footer"><nav aria-label="Time scale">{(['today','season','years'] as const).map(s=><button key={s} aria-pressed={scale===s} className={scale===s?'active':''} onClick={()=>setScale(s)}>{s}</button>)}</nav><div className="footer-rule"/><p>Nothing disappears. It becomes part of the sky.</p></footer>
+
   </main>
-  <GatheringRail items={o.data.buyItems} onAdd={o.addBuyItem} onUpdate={o.updateBuyItem} onDelete={o.deleteBuyItem} onRecord={o.addFinancialRecord}/>
+  <GatheringRail items={o.data.buyItems} records={o.data.financialRecords} onAdd={o.addBuyItem} onUpdate={o.updateBuyItem} onDelete={o.deleteBuyItem} onRecord={o.addFinancialRecord}/>
   <SkyJournal logs={o.data.moodJournal} onAdd={o.addMood}/>
   {panel&&<div className="drawer-shade" onClick={()=>setPanel(null)}><section className="planner-drawer" role="dialog" aria-modal="true" aria-label={panel} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.key==='Escape'&&setPanel(null)}><button autoFocus className="drawer-close" aria-label="Close panel" onClick={()=>setPanel(null)}><X size={20}/></button>
   {panel==='events'&&<FutureEvents entries={o.data.entries} onAdd={o.addEvent} onOpen={d=>{setDate(d);setPanel(null)}} onUpdate={o.updateEntry}/>}

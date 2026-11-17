@@ -135,8 +135,8 @@ test('store reordering preserves other days and financial records settle immedia
  assert.equal(snapshot.entries.filter(e=>e.date==='2026-11-17').sort((a,b)=>a.order-b.order).map(e=>e.text).join(','),'third,first,second');
  assert.equal(snapshot.entries.find(e=>e.text==='tomorrow').order,0);
  o.addFinancialRecord('Materials','expense',12.5);o.addFinancialRecord('Sale','income',25);
- assert.equal(snapshot.buyItems.length,2);assert.equal(snapshot.buyItems[0].bought,true);assert.equal(snapshot.buyItems[1].amount,25);
- o.addFinancialRecord('Invalid','expense',-1);assert.equal(snapshot.buyItems.length,2);
+ assert.equal(snapshot.financialRecords.length,2);assert.ok(snapshot.financialRecords[0].createdAt);assert.equal(snapshot.financialRecords[1].amount,25);
+ o.addFinancialRecord('Invalid','expense',-1);assert.equal(snapshot.financialRecords.length,2);
 });
 
 const {spiralPoint,zoomAt,shouldCaptureTyping}=load('navigation');
@@ -153,6 +153,18 @@ test('type-to-command excludes editors, shortcuts, and composing text',()=>{
  const e={key:'r',ctrlKey:false,metaKey:false,altKey:false,isComposing:false};
  assert.equal(shouldCaptureTyping(e,false),true);assert.equal(shouldCaptureTyping(e,true),false);assert.equal(shouldCaptureTyping({...e,ctrlKey:true},false),false);assert.equal(shouldCaptureTyping({...e,isComposing:true},false),false);assert.equal(shouldCaptureTyping({...e,key:'ArrowLeft'},false),false);
 });
-test('visit replaces go and find while connect opens constellation work',()=>{
- assert.equal(parseCommand('go [2026-12-10]').kind,'error');assert.equal(parseCommand('find [2026-12-10]').kind,'error');assert.equal(parseCommand('visit [2026-12-10]').date,'2026-12-10');assert.equal(parseCommand('connect').kind,'connect');
+test('visit and find focus dates while connect opens constellation work',()=>{
+ assert.equal(parseCommand('go [2026-12-10]').kind,'error');assert.equal(parseCommand('find [2026-12-10]').date,'2026-12-10');assert.equal(parseCommand('visit [2026-12-10]').date,'2026-12-10');assert.equal(parseCommand('connect').kind,'connect');
+});
+
+const {focusCamera}=load('navigation');
+const {preservedFinances}=load('finance');
+test('day focusing centers the day with a useful close scale',()=>{
+ const camera=focusCamera('2026-11-17',.25,5);const point=spiralPoint('2026-11-17',12+4*9);assert.ok(Math.abs((point.x-450)*.25*camera.k+camera.x)<1e-8);assert.ok(Math.abs((point.y-450)*.25*camera.k+camera.y)<1e-8);assert.ok(camera.k>1);
+});
+test('today focuses without text and find retains date focus semantics',()=>{
+ assert.equal(parseCommand('today').kind,'visit');assert.equal(parseCommand('today [sew]').text,'sew');assert.equal(parseCommand('find [December 10]').kind,'visit');
+});
+test('legacy amounts migrate once and shopping checks cannot alter the ledger',()=>{
+ const data={buyItems:[{id:'a',text:'Materials',kind:'expense',amount:12,bought:true,createdAt:1}]};const records=preservedFinances(data);assert.equal(records.length,1);assert.equal(records[0].amount,12);data.buyItems[0].bought=false;assert.equal(records[0].amount,12);assert.equal(preservedFinances({...data,financialRecords:records}).length,1);
 });

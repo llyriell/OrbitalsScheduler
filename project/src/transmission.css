@@ -145,3 +145,5 @@
 .iris-field{touch-action:none}
 @media(max-width:700px){.ghost-task-preview{right:36px;top:38%;width:200px;max-width:54vw;font-size:10px}.task-transmission{right:16px;width:calc(100vw - 32px)}.transmission-layout .sky-room .evol-eye-breathe{width:72vw}.transmission-layout .sky-room .evol-iris-background{width:150%;height:150%}}
 @media(prefers-reduced-motion:reduce){.ghost-task-preview{animation:none}}
+
+.camera-atmosphere{position:absolute;inset:0;pointer-events:none;will-change:transform}.iris-field:active{cursor:grabbing}.purchase-list .is-bought .purchase-word{opacity:.48;text-decoration:line-through}.purchase-list .is-bought .task-light{background:#c2d9c8;box-shadow:0 0 8px #c2d9c840}.void-explorer footer nav{display:inline-flex;gap:15px;margin-right:25px}.void-explorer footer nav button{padding:4px;color:#a5c5b1}.void-explorer footer nav button[aria-pressed=true]{border-bottom:1px solid #c3dbc7}

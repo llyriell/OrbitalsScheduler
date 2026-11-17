@@ -1,3 +1,4 @@
+import { preservedFinances } from './finance';
 import { moveBefore } from './commands';
 import { seriesOn } from './schedule';
 export { recursOn } from './schedule';
@@ -8,6 +9,7 @@ import type {
   BuyItem,
   Constellation,
   Entry,
+  FinancialRecord,
   LedgerKind,
   Mood,
   RecurringSeries,
@@ -40,6 +42,7 @@ export function addDaysISO(iso: string, days: number): string {
 }
 
 const emptyData: AppData = {
+  financialRecords: [],
   entries: [],
   traces: [],
   series: [],
@@ -53,6 +56,7 @@ function sanitize(raw: unknown): AppData {
   if (!raw || typeof raw !== 'object') return { ...emptyData };
   const d = raw as Partial<ArchiveData> & Partial<AppData>;
   return {
+    financialRecords: preservedFinances(d),
     entries: Array.isArray(d.entries) ? d.entries : [],
     traces: Array.isArray(d.traces) ? d.traces : [],
     series: Array.isArray(d.series) ? d.series : [],
@@ -75,6 +79,7 @@ export function loadData(): AppData {
 
 export function useOrbitals() {
   const [data, setData] = useState<AppData>(() => loadData());
+  useEffect(()=>{setData(d=>Array.isArray(d.financialRecords)?d:{...d,financialRecords:preservedFinances(d)})},[]);
 
   useEffect(() => {
     try {
@@ -266,8 +271,8 @@ export function useOrbitals() {
 
   const addFinancialRecord = useCallback((text:string,kind:LedgerKind,amount:number)=>{
     if(!text.trim()||!Number.isFinite(amount)||amount<0)return;
-    const item:BuyItem={id:uid('b'),text:text.trim(),kind,amount,bought:true,createdAt:Date.now(),boughtAt:Date.now()};
-    setData(d=>({...d,buyItems:[...d.buyItems,item]}));
+    const item:FinancialRecord={id:uid('f'),text:text.trim(),kind,amount,createdAt:Date.now()};
+    setData(d=>({...d,financialRecords:[...(d.financialRecords??preservedFinances(d)),item]}));
   },[]);
   const updateBuyItem = useCallback((id: string, patch: Partial<BuyItem>) => {
     setData((d) => ({

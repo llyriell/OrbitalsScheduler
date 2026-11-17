@@ -1,3 +1,4 @@
+import { preservedFinances } from './finance';
 import { ArchiveData, AppData, Entry, Constellation } from './types';
 import { formatDateLong } from './store';
 
@@ -19,6 +20,7 @@ export function parseArchive(json: string): AppData {
     throw new Error('Archive is missing required sections');
   }
   return {
+    financialRecords: preservedFinances(d),
     entries: d.entries,
     traces: Array.isArray(d.traces) ? d.traces : [],
     series: Array.isArray(d.series) ? d.series : [],

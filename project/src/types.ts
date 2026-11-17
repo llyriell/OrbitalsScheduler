@@ -64,7 +64,10 @@ export interface Constellation {
   createdAt: number;
 }
 
+export interface FinancialRecord { id:string; text:string; kind:LedgerKind; amount:number; createdAt:number; }
+
 export interface AppData {
+  financialRecords: FinancialRecord[];
   entries: Entry[];
   traces: Trace[];
   series: RecurringSeries[];

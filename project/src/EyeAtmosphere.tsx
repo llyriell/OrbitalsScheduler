@@ -10,7 +10,7 @@ export function EyeAtmosphere(){
  const layers=Array.from(host.querySelectorAll<HTMLImageElement>('.evol-eye-layer'));
  const background=host.querySelector<HTMLElement>('.evol-iris-background');
  const navigate=(event:Event)=>{const delta=(event as CustomEvent<{delta:number}>).detail.delta;navigation=Math.max(-3,Math.min(3,navigation-delta/180))};
- const tick=(now:number)=>{if(motion.matches)return;const dt=Math.min(.05,(now-last)/1000);last=now;navigation*=Math.exp(-dt*2.2);const boost=Math.min(1,Math.abs(navigation));speed+=(navigation*65-speed)*Math.min(1,dt*8);angle+=speed*dt;glow+=(boost*boost*(3-2*boost)-glow)*Math.min(1,dt*6);
+ const tick=(now:number)=>{if(motion.matches)return;const dt=Math.min(.05,(now-last)/1000);last=now;navigation*=Math.exp(-dt*2.2);const boost=Math.min(1,Math.abs(navigation));speed+=(1.8+navigation*65-speed)*Math.min(1,dt*8);angle+=speed*dt;glow+=(boost*boost*(3-2*boost)-glow)*Math.min(1,dt*6);
  const phase=now%4200/4200;const beat=Math.max(Math.exp(-Math.pow((phase-.12)/.085,2)),Math.exp(-Math.pow((phase-.22)/.1,2)));
  if(background)background.style.opacity=String(.17+beat*.04);
  layers.forEach((el,i)=>{const ring=rings[i];el.style.transform='translate(-50%,-50%) rotate('+ring.direction*angle*ring.factor+'deg)';el.style.opacity=String(Math.min(.9,ring.opacity*(1+1.1*glow)))});
