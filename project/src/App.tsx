@@ -1,6 +1,8 @@
+import { TransmissionBox } from './TransmissionBox';
+import { GatheringRail } from './GatheringRail';
 import { Fold } from './Fold';
 import { CommandLine } from './CommandLine';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Plus, X, Wind, Download, Sparkles } from 'lucide-react';
 import { useOrbitals, todayISO, addDaysISO } from './store';
 import { SkyJournal } from './SkyJournal';
@@ -23,6 +25,15 @@ export default function App() {
  const [scale,setScale]=useState<'today'|'season'|'years'>('today');
  const [draft,setDraft]=useState('');
  const [selected,setSelected]=useState<string|null>(null);
+ const [hovered,setHovered]=useState<string|null>(null);
+ const hoverTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const clearHover=()=>{if(hoverTimer.current)clearTimeout(hoverTimer.current)};
+ const previewNode=(id:string|null)=>{clearHover();if(selected)return;if(id)setHovered(id);else hoverTimer.current=setTimeout(()=>setHovered(null),500)};
+ const pinNode=(id:string)=>{clearHover();setHovered(null);setSelected(id)};
+ const closeNode=()=>{clearHover();setHovered(null);setSelected(null)};
+ const [dragId,setDragId]=useState<string|null>(null);
+ const [dragOver,setDragOver]=useState<string|null>(null);
+ useEffect(()=>()=>{if(hoverTimer.current)clearTimeout(hoverTimer.current)},[]);
  const [evol,setEvol]=useState<EvolTarget|null>(null);
  const [study,setStudy]=useState(false);
  const [voidOpen,setVoidOpen]=useState(false);
@@ -32,33 +43,33 @@ export default function App() {
  const [linkIds,setLinkIds]=useState<string[]>([]);
  useEffect(()=>{o.materializeRecurring(date)},[date,o.materializeRecurring,o.data.series]);
  const entries=o.data.entries.filter(e=>e.date===date&&!e.orbiting).sort((a,b)=>a.order-b.order);
- const chosen=o.data.entries.find(e=>e.id===selected);
+ const chosen=o.data.entries.find(e=>e.id===(selected??hovered));
  const format=new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long'});
  const add=()=>{if(draft.trim()){o.addEntries(date,draft.split(/\r?\n/));setDraft('')}};
  const exportData=()=>{const blob=new Blob([JSON.stringify({schema:'orbitals.archive',version:1,exportedAt:new Date().toISOString(),...o.data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='orbitals-archive.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
  return <div className="iris-app transmission-layout">
-  <CommandLine entries={o.data.entries} onAddOrbit={o.addOrbit} onAddToday={t=>o.addEntries(todayISO(),[t])} onBuy={t=>o.addBuyItem(t)} onGo={d=>{setDate(d);setSelected(null)}} onEye={()=>setVoidOpen(true)} onSelect={id=>{setSelected(id);const e=o.data.entries.find(v=>v.id===id);if(e&&!e.orbiting)setDate(e.date)}}/>
+  <CommandLine entries={o.data.entries} onAddOrbit={o.addOrbit} onAddToday={t=>o.addEntries(todayISO(),[t])} onGather={t=>o.addBuyItem(t)} onGo={d=>{setDate(d);setSelected(null)}} onEye={()=>setVoidOpen(true)} onEscape={()=>{setDate(todayISO());closeNode();setPanel(null);setVoidOpen(false)}} onSelect={id=>{pinNode(id);const e=o.data.entries.find(v=>v.id===id);if(e&&!e.orbiting)setDate(e.date)}}/>
   <aside className="notebook">
    <header className="wordmark">orbitals<span>a life, unfolding</span></header>
    <div className="date-line"><button aria-label="Previous day" onClick={()=>setDate(addDaysISO(date,-1))}><ArrowLeft size={15}/></button><label>{format}<input aria-label="Choose day" type="date" value={date} onChange={e=>e.target.value&&setDate(e.target.value)}/></label><button aria-label="Next day" onClick={()=>setDate(addDaysISO(date,1))}><ArrowRight size={15}/></button></div>
-   {date!==todayISO()&&<button className="text-link" onClick={()=>setDate(todayISO())}>return to today</button>}
+   {date!==todayISO()&&<button className="text-link" onClick={()=>setDate(todayISO())}>return</button>}
    <section className="within"><h1>The everlasting present <span/></h1>
-    <ul className="daily-list">{entries.map(e=><li key={e.id} className={e.done?'fulfilled':''}><button className="task-light" aria-label={(e.done?'Reopen ':'Complete ')+e.text} aria-pressed={e.done} onClick={()=>o.updateEntry(e.id,{done:!e.done})}/><button className={selected===e.id?'entry-title active':'entry-title'} onClick={()=>setSelected(e.id)}>{e.text}{e.kind==='event'&&<small className="event-tag">{e.time??'event'}</small>}</button></li>)}</ul>
+    <ul className="daily-list" onDragOver={event=>event.preventDefault()} onDrop={event=>{event.preventDefault();const id=dragId??event.dataTransfer.getData('text/plain');if(id)o.reorderEntry(date,id,null);setDragId(null);setDragOver(null)}}>{entries.map(e=><li key={e.id} draggable onKeyDown={event=>{if(event.altKey&&(event.key==='ArrowUp'||event.key==='ArrowDown')){event.preventDefault();const idx=entries.findIndex(v=>v.id===e.id);if(event.key==='ArrowUp'&&idx>0)o.reorderEntry(date,e.id,entries[idx-1].id);if(event.key==='ArrowDown'&&idx<entries.length-1)o.reorderEntry(date,e.id,entries[idx+2]?.id??null)}}} onDragStart={event=>{setDragId(e.id);event.dataTransfer.setData('text/plain',e.id);event.dataTransfer.effectAllowed='move'}} onDragOver={event=>{event.preventDefault();setDragOver(e.id)}} onDrop={event=>{event.preventDefault();event.stopPropagation();const id=dragId??event.dataTransfer.getData('text/plain');if(id&&id!==e.id)o.reorderEntry(date,id,e.id);setDragId(null);setDragOver(null)}} onDragEnd={()=>{setDragId(null);setDragOver(null)}} className={(e.done?'fulfilled ':'')+(dragOver===e.id&&dragId!==e.id?'drop-before ':'')+(dragId===e.id?'is-dragging':'')}><span className="task-grip" aria-hidden="true">⠿</span><button className="task-light" aria-label={(e.done?'Reopen ':'Complete ')+e.text} aria-pressed={e.done} onClick={()=>o.updateEntry(e.id,{done:!e.done})}/><button className={selected===e.id?'entry-title active':'entry-title'} onClick={()=>pinNode(e.id)}>{e.text}{e.kind==='event'&&<small className="event-tag">{e.time??'event'}</small>}</button></li>)}</ul>
     {!entries.length&&<p className="empty-note">A little space for what calls to you today.</p>}
     <form className="add-line" onSubmit={e=>{e.preventDefault();add()}}><textarea aria-label="New orbitals" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="add to this moment…" rows={2} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();add()}}}/><button aria-label="Add orbitals" disabled={!draft.trim()}><Plus size={17}/></button></form>
    </section>
    <Fold title="within reach" count={upcoming.length} action={<button aria-label="Schedule a future event" onClick={()=>setPanel('events')}><Plus size={13}/></button>}><small className="tomorrow-label">tomorrow · {new Date(tomorrow+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</small>{upcoming.slice(0,4).map(e=><button className="side-item" key={e.id} onClick={()=>{setDate(tomorrow);if(!e.virtual)setSelected(e.id)}}><span className="small-orbit"/>{e.text}</button>)}{!upcoming.length&&<p className="empty-note">An open tomorrow.</p>}<button className="text-link" onClick={()=>setPanel('events')}>place something on the horizon ↗</button><button className="text-link" onClick={()=>setDate(tomorrow)}>visit tomorrow ↗</button></Fold>
    <Fold title="returning" count={o.data.series.length} action={<button aria-label="Manage recurring tasks" onClick={()=>setPanel('returning')}><Plus size={13}/></button>}>{o.data.series.slice(0,3).map(s=><button className="side-item" key={s.id} onClick={()=>setPanel('returning')}><span className="small-orbit"/>{s.title}<small>{s.paused?'resting':rhythmLabel(s)}</small></button>)}<button className="text-link" onClick={()=>setPanel('returning')}>{o.data.series.length?'all rhythms ↗':'give something a rhythm ↗'}</button></Fold>
-   <Fold title="gathering" count={o.data.buyItems.filter(b=>!b.bought).length} action={<button aria-label="Manage purchases" onClick={()=>setPanel('gathering')}><Plus size={13}/></button>}>{o.data.buyItems.filter(b=>!b.bought).slice(0,4).map(b=><button className="side-item" key={b.id} onClick={()=>setPanel('gathering')}><span className="small-orbit"/>{b.text}</button>)}<button className="text-link" onClick={()=>setPanel('gathering')}>open the checklist ↗</button></Fold>
    <footer className="notebook-footer"><button onClick={()=>setEvol({kind:'day',date})}><Sparkles size={13}/> with Evol</button><button aria-label="Download your archive" onClick={exportData}><Download size={14}/></button></footer>
   </aside>
   <main className="sky-room">
    <div className="sky-top"><span>{date.slice(0,4)} <i>·</i> {study?'a study of a possible sky':'your unfolding sky'}</span><div className="sky-top-actions"><button onClick={()=>setPanel('constellations')}>constellations ↗</button><button onClick={()=>setVoidOpen(true)}>enter the eye ⤢</button></div></div>
-   <Iris data={o.data} date={date} selected={selected} onSelect={setSelected} scale={scale} study={study}/>
+   <Iris data={o.data} date={date} selected={selected??hovered} onSelect={pinNode} onHover={previewNode} scale={scale} study={study}/>
    <div className="sky-caption"><span>one turn, one year</span><button className="text-link" onClick={()=>setStudy(!study)}>{study?'return to my sky':'explore a sample sky'}</button></div>
-   {chosen&&<section className="thread-detail" aria-label="Selected orbital"><button className="detail-close" aria-label="Close orbital" onClick={()=>setSelected(null)}><X size={16}/></button><small>{chosen.orbiting?'undated · in orbit':chosen.date} · {chosen.done?'fulfilled':'unfolding'}</small><input aria-label="Orbital title" value={chosen.text} onChange={e=>o.updateEntry(chosen.id,{text:e.target.value})}/><textarea aria-label="Orbital note" placeholder="leave a little trace…" value={chosen.note??''} onChange={e=>o.updateEntry(chosen.id,{note:e.target.value})}/><div className="detail-actions"><button onClick={()=>o.updateEntry(chosen.id,{done:!chosen.done})}>{chosen.done?'reopen':'mark fulfilled'}</button>{chosen.orbiting?<button onClick={()=>o.recallOrbital(chosen.id,date)}>bring into today</button>:<button onClick={()=>o.letOrbit(chosen.id)}><Wind size={13}/> let orbit</button>}</div><label className="move-date">return on <input aria-label="Move orbital to date" type="date" value={chosen.orbiting?'':chosen.date??''} onChange={e=>{if(e.target.value){if(chosen.orbiting)o.recallOrbital(chosen.id,e.target.value);else o.moveEntry(chosen.id,e.target.value)}}}/></label></section>}
+   {chosen&&<TransmissionBox key={chosen.id} className="task-transmission" label="Selected orbital" onEnter={clearHover} onLeave={closeNode}><button className="detail-close" aria-label="Close orbital" onClick={closeNode}><X size={16}/></button><small>{chosen.orbiting?'undated · in orbit':chosen.date} · {chosen.done?'fulfilled':'unfolding'}</small><input aria-label="Orbital title" value={chosen.text} onChange={e=>o.updateEntry(chosen.id,{text:e.target.value})}/><textarea aria-label="Orbital note" placeholder="leave a little trace…" value={chosen.note??''} onChange={e=>o.updateEntry(chosen.id,{note:e.target.value})}/><div className="detail-actions"><button onClick={()=>o.updateEntry(chosen.id,{done:!chosen.done})}>{chosen.done?'reopen':'mark fulfilled'}</button>{chosen.orbiting?<button onClick={()=>o.recallOrbital(chosen.id,date)}>bring into today</button>:<button onClick={()=>o.letOrbit(chosen.id)}><Wind size={13}/> let orbit</button>}</div><label className="move-date">return on <input aria-label="Move orbital to date" type="date" value={chosen.orbiting?'':chosen.date??''} onChange={e=>{if(e.target.value){if(chosen.orbiting)o.recallOrbital(chosen.id,e.target.value);else o.moveEntry(chosen.id,e.target.value)}}}/></label></TransmissionBox>}
    <footer className="sky-footer"><nav aria-label="Time scale">{(['today','season','years'] as const).map(s=><button key={s} aria-pressed={scale===s} className={scale===s?'active':''} onClick={()=>setScale(s)}>{s}</button>)}</nav><div className="footer-rule"/><p>Nothing disappears. It becomes part of the sky.</p></footer>
   </main>
+  <GatheringRail items={o.data.buyItems} onAdd={o.addBuyItem} onUpdate={o.updateBuyItem} onDelete={o.deleteBuyItem} onRecord={o.addFinancialRecord}/>
   <SkyJournal logs={o.data.moodJournal} onAdd={o.addMood}/>
   {panel&&<div className="drawer-shade" onClick={()=>setPanel(null)}><section className="planner-drawer" role="dialog" aria-modal="true" aria-label={panel} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.key==='Escape'&&setPanel(null)}><button autoFocus className="drawer-close" aria-label="Close panel" onClick={()=>setPanel(null)}><X size={20}/></button>
   {panel==='events'&&<FutureEvents entries={o.data.entries} onAdd={o.addEvent} onOpen={d=>{setDate(d);setPanel(null)}} onUpdate={o.updateEntry}/>}

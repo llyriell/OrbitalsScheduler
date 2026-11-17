@@ -103,3 +103,38 @@ test('store saves held timestamps and creates command orbitals as undated',()=>{
  assert.equal(snapshot.entries[0].orbiting,true);
  assert.equal(upcomingOn(snapshot,snapshot.entries[0].date).length,0);
 });
+
+const {resolveDay,moveBefore}=load('commands');
+test('gather replaces buy and find resolves named and relative dates',()=>{
+ assert.equal(parseCommand('gather [linen]').kind,'gather');
+ assert.equal(parseCommand('buy [linen]').kind,'error');
+ const base=new Date(2026,10,17,12);
+ assert.equal(resolveDay('December 10',base),'2026-12-10');
+ assert.equal(resolveDay('tomorrow',base),'2026-11-18');
+ assert.equal(resolveDay('yesterday',base),'2026-11-16');
+ assert.equal(resolveDay('November 31',base),null);
+ assert.equal(resolveDay('2026-02-30',base),null);
+});
+test('drag reordering moves in both directions and supports dropping at the end',()=>{
+ const items=[{id:'a',order:0,note:'keep'},{id:'b',order:1},{id:'c',order:2}];
+ assert.equal(moveBefore(items,'c','a').map(e=>e.id).join(','),'c,a,b');
+ assert.equal(moveBefore(items,'a','c').map(e=>e.id).join(','),'b,a,c');
+ assert.equal(moveBefore(items,'a',null).map(e=>e.id).join(','),'b,c,a');
+ assert.equal(moveBefore(items,'a','a').map(e=>e.id).join(','),'a,b,c');
+ assert.equal(moveBefore(items,'c','a')[1].note,'keep');
+ assert.equal(items[0].id,'a');
+});
+test('store reordering preserves other days and financial records settle immediately',()=>{
+ let snapshot;const module={exports:{}};
+ const code=ts.transpileModule(readFileSync(resolve('src/store.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const fakeReact={useCallback:f=>f,useEffect:()=>{},useState:init=>{snapshot=init();return [snapshot,update=>{snapshot=typeof update==='function'?update(snapshot):update}]}};
+ vm.runInNewContext(code,{module,exports:module.exports,require:p=>p==='react'?fakeReact:load(p.slice(2)),Date,Math,JSON,crypto:globalThis.crypto,localStorage:{getItem:()=>null}});
+ const o=module.exports.useOrbitals();o.addEntries('2026-11-17',['first','second','third']);o.addEntries('2026-11-18',['tomorrow']);
+ const first=snapshot.entries.find(e=>e.text==='first');const third=snapshot.entries.find(e=>e.text==='third');
+ o.reorderEntry('2026-11-17',third.id,first.id);
+ assert.equal(snapshot.entries.filter(e=>e.date==='2026-11-17').sort((a,b)=>a.order-b.order).map(e=>e.text).join(','),'third,first,second');
+ assert.equal(snapshot.entries.find(e=>e.text==='tomorrow').order,0);
+ o.addFinancialRecord('Materials','expense',12.5);o.addFinancialRecord('Sale','income',25);
+ assert.equal(snapshot.buyItems.length,2);assert.equal(snapshot.buyItems[0].bought,true);assert.equal(snapshot.buyItems[1].amount,25);
+ o.addFinancialRecord('Invalid','expense',-1);assert.equal(snapshot.buyItems.length,2);
+});

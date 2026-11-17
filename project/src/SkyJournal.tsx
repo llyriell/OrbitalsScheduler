@@ -1,8 +1,13 @@
-import { useEffect,useState } from 'react';
+import { TransmissionBox } from './TransmissionBox';
+import { useEffect,useRef,useState } from 'react';
 import { MOODS } from './components/Mood';
 import type { Mood,MoodIcon,MoodLog } from './types';
 import { journalMoment,clockText } from './journalTime';
 export function SkyJournal({logs,onAdd}:{logs:MoodLog[];onAdd:(date:string,mood:Mood,recordedAt?:number)=>void}){
+ const closeTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const holdJournal=()=>{if(closeTimer.current)clearTimeout(closeTimer.current)};
+ const leaveJournal=()=>{holdJournal();closeTimer.current=setTimeout(()=>setAll(false),500)};
+ useEffect(()=>()=>{if(closeTimer.current)clearTimeout(closeTimer.current)},[]);
  const [icon,setIcon]=useState<MoodIcon|null>(null);const [text,setText]=useState('');const [all,setAll]=useState(false);const [now,setNow]=useState(Date.now);const [held,setHeld]=useState<number|null>(null);const [sent,setSent]=useState('');
  useEffect(()=>{if(held!==null)return;setNow(Date.now());const id=window.setInterval(()=>setNow(Date.now()),250);return()=>window.clearInterval(id)},[held]);
  const begin=()=>{if(held===null){const t=Date.now();setHeld(t);setNow(t)}setSent('')};
@@ -11,7 +16,7 @@ export function SkyJournal({logs,onAdd}:{logs:MoodLog[];onAdd:(date:string,mood:
  const visible=logs.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.recordedAt??0)-(a.recordedAt??0));
  return <div className={'sky-journal sky-transmission '+(held!==null?'is-writing':'')}><div className="sky-bar-line"><div className="sky-clock"><span>sky within</span><time aria-label={held!==null?'Held journal time':'Live local time'}>{clockText(held??now)}</time><small>{held!==null?'moment held':'local time'}</small></div>
  <div className="mood-options">{MOODS.map(m=><button key={m.icon} aria-label={m.label} title={m.label} aria-pressed={icon===m.icon} onClick={()=>{begin();setIcon(m.icon)}}><m.Lucide size={17} strokeWidth={1.3}/></button>)}</div>
- <form onSubmit={e=>{e.preventDefault();submit()}}><textarea aria-label="A note about your sky" value={text} onFocus={begin} onChange={e=>{begin();setText(e.target.value)}} placeholder="the weather within…" rows={1} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}if(e.key==='Escape'){reset();e.currentTarget.blur()}}}/><button disabled={!icon} aria-label="Send current sky">send ↗</button>{held!==null&&<button type="button" onClick={reset} aria-label="Cancel sky entry">×</button>}</form><button className="journal-toggle" aria-expanded={all} onClick={()=>setAll(!all)}>{all?'close journal':'journal ↗'}</button></div>
+ <form onSubmit={e=>{e.preventDefault();submit()}}><textarea aria-label="A note about your sky" value={text} onFocus={begin} onChange={e=>{begin();setText(e.target.value)}} placeholder="the weather within…" rows={1} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}if(e.key==='Escape'){reset();e.currentTarget.blur()}}}/><button disabled={!icon} aria-label="Send current sky">send ↗</button>{held!==null&&<button type="button" onClick={reset} aria-label="Cancel sky entry">×</button>}</form><button className="journal-toggle" onPointerEnter={e=>{if(e.pointerType!=='touch'){holdJournal();setAll(true)}}} onPointerLeave={leaveJournal} aria-expanded={all} onClick={()=>{holdJournal();setAll(true)}}>journal ↗</button></div>
  <div className="sky-transmission-status" role="status">{sent|| (held!==null?'Choose a sky. Take your time; this moment is held.':'')}</div>
- {all&&<section className="sky-journal-history" aria-label="Sky journal"><header><span>the changing weather</span><button aria-label="Close sky journal" onClick={()=>setAll(false)}>×</button></header><div className="journal-records expanded">{visible.length?visible.map(m=>{const M=MOODS.find(v=>v.icon===m.icon);return <article key={m.id}>{M&&<M.Lucide size={14}/>}<div><small>{m.date} · {m.recordedAt?clockText(m.recordedAt):'time not recorded'} · {M?.label}</small>{m.text&&<p>{m.text}</p>}</div></article>}):<p className="fine-note">Your skies will gather here.</p>}</div></section>}</div>
+ {all&&<TransmissionBox className="journal-transmission" label="Sky journal" onEnter={holdJournal} onLeave={()=>{holdJournal();setAll(false)}}><header><span>the changing weather</span><button aria-label="Close sky journal" onClick={()=>setAll(false)}>×</button></header><div className="journal-records expanded">{visible.length?visible.map(m=>{const M=MOODS.find(v=>v.icon===m.icon);return <article key={m.id}>{M&&<M.Lucide size={14}/>}<div><small>{m.date} · {m.recordedAt?clockText(m.recordedAt):'time not recorded'} · {M?.label}</small>{m.text&&<p>{m.text}</p>}</div></article>}):<p className="fine-note">Your skies will gather here.</p>}</div></TransmissionBox>}</div>
 }

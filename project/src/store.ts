@@ -1,3 +1,4 @@
+import { moveBefore } from './commands';
 import { seriesOn } from './schedule';
 export { recursOn } from './schedule';
 import { useCallback, useEffect, useState } from 'react';
@@ -168,11 +169,7 @@ export function useOrbitals() {
       const inDay = d.entries
         .filter((e) => e.date === date)
         .sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
-      const moving = inDay.find((e) => e.id === id);
-      if (!moving) return d;
-      const rest = inDay.filter((e) => e.id !== id);
-      const idx = targetId ? rest.findIndex((e) => e.id === targetId) : rest.length;
-      const next = [...rest.slice(0, idx), moving, ...rest.slice(idx)];
+      const next = moveBefore(inDay,id,targetId);
       const orders = new Map(next.map((e, i) => [e.id, i]));
       return {
         ...d,
@@ -267,6 +264,11 @@ export function useOrbitals() {
     [],
   );
 
+  const addFinancialRecord = useCallback((text:string,kind:LedgerKind,amount:number)=>{
+    if(!text.trim()||!Number.isFinite(amount)||amount<0)return;
+    const item:BuyItem={id:uid('b'),text:text.trim(),kind,amount,bought:true,createdAt:Date.now(),boughtAt:Date.now()};
+    setData(d=>({...d,buyItems:[...d.buyItems,item]}));
+  },[]);
   const updateBuyItem = useCallback((id: string, patch: Partial<BuyItem>) => {
     setData((d) => ({
       ...d,
@@ -324,6 +326,7 @@ export function useOrbitals() {
     deleteSeries,
     materializeRecurring,
     addBuyItem,
+    addFinancialRecord,
     updateBuyItem,
     deleteBuyItem,
     createConstellation,
