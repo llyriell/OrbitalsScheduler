@@ -122,3 +122,26 @@
 @media(prefers-reduced-motion:reduce){.transmission-inner,.journal-transmission .transmission-inner,.crt-sweep{animation:none}.gathering-rail,.rail-body{transition:none}}
 
 .transmission-box{--gold:#d8d9d3;--muted:#9caaa9}.transmission-box button{color:inherit;background:none;border:0;cursor:pointer;font-family:inherit}.transmission-box input,.transmission-box textarea{font-family:inherit}.transmission-box button:focus-visible{outline:1px solid #b9d1bd;outline-offset:4px}
+
+.ghost-task-preview{position:fixed;right:66px;top:39%;width:245px;max-width:40vw;pointer-events:none!important;z-index:24;opacity:.48;color:#bed2c4;font-family:ui-monospace,Consolas,monospace;padding:12px 0 12px 17px;border-left:1px solid #b3d2bd25;background:linear-gradient(90deg,#12201918,transparent);animation:ghost-presence .25s ease-out}
+.ghost-task-preview small{display:block;font-size:8px;line-height:1.7;letter-spacing:.08em;color:#88a892;margin-bottom:10px}
+.ghost-task-preview strong{font-size:12px;line-height:1.7;font-weight:normal;display:block}
+.ghost-task-preview p{font-size:10px;line-height:1.9;margin:9px 0 0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+@keyframes ghost-presence{from{opacity:0;transform:translateY(4px)}to{opacity:.48;transform:translateY(0)}}
+.task-transmission{left:auto;right:65px;top:50%;transform:translateY(-50%);width:min(440px,calc(100vw - 70px))}
+.task-transmission .transmission-inner{padding:38px 28px 25px;min-height:280px;background:#c9dec610;backdrop-filter:blur(4px)}
+.task-transmission input:not([type=date]){font-size:14px;margin:23px 0 14px}
+.task-transmission textarea{font-size:11px;min-height:72px}
+.transmission-layout .sky-room .evol-iris-background{width:133%;height:133%;max-width:none}
+.transmission-layout .sky-room .evol-eye-breathe{width:min(54vw,54vh)}
+.evol-atmosphere{overflow:visible}
+.orbital-node.unfinished .node-core{opacity:.32;fill:#d3e5db}
+.orbital-node.unfinished .node-halo{opacity:.12}
+.orbital-node.unfinished.attended .node-core,.orbital-node.unfinished [role=button]:hover .node-core{opacity:.58}
+.orbital-node.lit .node-core{opacity:1;fill:#f1fff4}
+.orbital-node.lit .node-halo{opacity:.95}
+.purchase-list .purchase-word{flex:1;text-align:left;font-size:15px;line-height:1.7;padding:0}
+.feature-list .purchase-word{text-align:left;font-size:14px;padding:0}
+.iris-field{touch-action:none}
+@media(max-width:700px){.ghost-task-preview{right:36px;top:38%;width:200px;max-width:54vw;font-size:10px}.task-transmission{right:16px;width:calc(100vw - 32px)}.transmission-layout .sky-room .evol-eye-breathe{width:72vw}.transmission-layout .sky-room .evol-iris-background{width:150%;height:150%}}
+@media(prefers-reduced-motion:reduce){.ghost-task-preview{animation:none}}

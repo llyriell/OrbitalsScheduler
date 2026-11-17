@@ -69,8 +69,8 @@ test('commands accept bracket syntax, preserve text, and reject impossible dates
  assert.equal(parseCommand('add [Sew the cuff]').text,'Sew the cuff');
  assert.equal(parseCommand('recall []').query,'');
  assert.equal(parseCommand('recall [LAVENDER]').query,'LAVENDER');
- assert.equal(parseCommand('go [2026-02-30]').kind,'error');
- assert.equal(parseCommand('go [2026-12-10]').date,'2026-12-10');
+ assert.equal(parseCommand('visit [2026-02-30]').kind,'error');
+ assert.equal(parseCommand('visit [2026-12-10]').date,'2026-12-10');
  assert.equal(parseCommand('add []').kind,'error');
 });
 test('recall finds task titles and notes without changing entries',()=>{
@@ -137,4 +137,22 @@ test('store reordering preserves other days and financial records settle immedia
  o.addFinancialRecord('Materials','expense',12.5);o.addFinancialRecord('Sale','income',25);
  assert.equal(snapshot.buyItems.length,2);assert.equal(snapshot.buyItems[0].bought,true);assert.equal(snapshot.buyItems[1].amount,25);
  o.addFinancialRecord('Invalid','expense',-1);assert.equal(snapshot.buyItems.length,2);
+});
+
+const {spiralPoint,zoomAt,shouldCaptureTyping}=load('navigation');
+test('the spiral starts at 2000 and completes one outward turn each year',()=>{
+ const center=spiralPoint('2000-01-01');assert.ok(Math.abs(center.r)<.1);
+ const a=spiralPoint('2026-01-01');const b=spiralPoint('2027-01-01');assert.ok(Math.abs((b.r-a.r)-46)<.01);assert.ok(Math.abs(a.a-b.a)<.001);
+});
+test('wheel zoom anchors at the pointer and respects bounds',()=>{
+ const c={k:1,x:10,y:-20};const p={x:150,y:60};const z=zoomAt(c,-300,p);assert.ok(z.k>1);
+ assert.ok(Math.abs((p.x-z.x)/z.k-(p.x-c.x)/c.k)<1e-8);
+ assert.ok(zoomAt(c,-1e6,p).k<=24);assert.ok(zoomAt(c,1e6,p).k>=.25);
+});
+test('type-to-command excludes editors, shortcuts, and composing text',()=>{
+ const e={key:'r',ctrlKey:false,metaKey:false,altKey:false,isComposing:false};
+ assert.equal(shouldCaptureTyping(e,false),true);assert.equal(shouldCaptureTyping(e,true),false);assert.equal(shouldCaptureTyping({...e,ctrlKey:true},false),false);assert.equal(shouldCaptureTyping({...e,isComposing:true},false),false);assert.equal(shouldCaptureTyping({...e,key:'ArrowLeft'},false),false);
+});
+test('visit replaces go and find while connect opens constellation work',()=>{
+ assert.equal(parseCommand('go [2026-12-10]').kind,'error');assert.equal(parseCommand('find [2026-12-10]').kind,'error');assert.equal(parseCommand('visit [2026-12-10]').date,'2026-12-10');assert.equal(parseCommand('connect').kind,'connect');
 });
