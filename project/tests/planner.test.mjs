@@ -182,3 +182,5 @@ test('completed gathering leaves the next day while unchecked items persist',()=
 test('season and year lenses filter actual records',()=>{
  assert.equal(matchesLens('2026-11-17',2026,3),true);assert.equal(matchesLens('2026-11-17',2026,1),false);assert.equal(matchesLens('2025-11-17',2026),false);assert.equal(matchesLens('2026-12-10',2026,0),true);
 });
+
+test('constellation command opens saved connections with singular and plural aliases',()=>{const {parseCommand}=load('commands');assert.equal(parseCommand('constellation').kind,'constellation');assert.equal(parseCommand('constellations').kind,'constellation');});

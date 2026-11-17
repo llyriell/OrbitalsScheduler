@@ -148,7 +148,7 @@
 
 .camera-atmosphere{position:absolute;inset:0;pointer-events:none;will-change:transform}.iris-field:active{cursor:grabbing}.purchase-list .is-bought .purchase-word{opacity:.48;text-decoration:line-through}.purchase-list .is-bought .task-light{background:#c2d9c8;box-shadow:0 0 8px #c2d9c840}.void-explorer footer nav{display:inline-flex;gap:15px;margin-right:25px}.void-explorer footer nav button{padding:4px;color:#a5c5b1}.void-explorer footer nav button[aria-pressed=true]{border-bottom:1px solid #c3dbc7}
 
-.eye-mode>.notebook,.eye-mode>.command-console,.eye-mode>.gathering-rail,.eye-mode>.sky-transmission,.eye-mode .sky-top,.eye-mode .sky-caption{opacity:0!important;visibility:hidden;pointer-events:none!important;transition:opacity .4s ease,visibility .4s}
+.eye-mode>.notebook,.eye-mode>.gathering-rail,.eye-mode>.sky-transmission,.eye-mode .sky-top,.eye-mode .sky-caption{opacity:0!important;visibility:hidden;pointer-events:none!important;transition:opacity .4s ease,visibility .4s}
 .held-eye-heading{position:fixed;top:35px;left:45px;right:45px;z-index:35;display:flex;justify-content:space-between;align-items:flex-start;animation:eye-tools-reveal .7s ease}
 .held-eye-heading p{font:9px ui-monospace,Consolas,monospace;letter-spacing:.2em;text-transform:uppercase;color:#93ada0;margin:0 0 15px}
 .held-eye-heading h1{font:italic 23px Georgia,serif;font-weight:normal;color:#c9d9cd;margin:0 0 13px}
@@ -166,3 +166,19 @@
 .gathering-rail .rail-body>nav{margin-top:-12px}.gathering-rail .feature-page,.gathering-rail .quiet-form input,.gathering-rail .feature-page h1{font-family:ui-monospace,Consolas,monospace}
 @media(max-width:700px){.held-eye-heading{top:25px;left:22px;right:22px}.held-eye-heading h1{font-size:19px;line-height:1.5;max-width:280px}.held-eye-heading span{font-size:9px;display:block;max-width:270px}.eye-tools{bottom:22px;max-width:calc(100vw - 35px);gap:12px;width:calc(100vw - 35px);padding:13px}.eye-tools input[aria-label="Drawn constellation name"]{width:160px}.event-transmission{width:calc(100vw - 32px)}.event-transmission .transmission-inner{padding:20px 12px}}
 @media(prefers-reduced-motion:reduce){.held-eye-heading,.eye-tools{animation:none}.eye-mode>.notebook{transition:none}}
+
+/* The input remains part of the eye; browsing floats over the same sky. */
+.eye-mode>.command-console{visibility:visible;pointer-events:auto;z-index:70}
+.eye-mode .held-eye-heading{top:100px}
+.constellation-transmission{left:auto;right:55px;top:52%;transform:translateY(-50%);width:min(420px,calc(100vw - 40px));z-index:60}
+.constellation-transmission .transmission-inner{padding:32px 25px;min-height:230px;max-height:calc(100dvh - 220px);background:#c9dec610}
+.constellation-transmission header{padding-right:18px}
+.constellation-transmission h2{font:italic 22px Georgia,serif;overflow-wrap:anywhere}
+.constellation-transmission small,.constellation-meta{display:block;font:9px/1.8 ui-monospace,Consolas,monospace;color:#91aa9c}
+.constellation-list>button{display:block;width:100%;text-align:left;padding:17px 0;border-bottom:1px solid #c3d6c520}
+.constellation-list strong,.constellation-stars strong{display:block;font:12px/1.8 ui-monospace,Consolas,monospace;font-weight:normal;overflow-wrap:anywhere}
+.constellation-list p,.constellation-stars p{font:11px/1.9 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.constellation-back{font-size:10px;padding:8px 0}.constellation-stars{padding-left:18px}.constellation-stars li{padding:13px 0;border-bottom:1px solid #c3d6c520}.constellation-stars button{text-align:left}
+.human-eye-background{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:145%;height:145%;max-width:none;object-fit:contain;opacity:.025;pointer-events:none;z-index:0}
+.evol-iris-background{z-index:1}.evol-eye-breathe{z-index:2}
+@media(max-width:700px){.eye-mode .held-eye-heading{top:90px}.constellation-transmission{right:20px}.constellation-transmission .transmission-inner{max-height:calc(100dvh - 250px)}}

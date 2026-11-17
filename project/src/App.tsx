@@ -12,7 +12,7 @@ import { EyeControls } from './EyeControls';
 import { upcomingOn, rhythmLabel } from './schedule';
 import { Recurring } from './Recurring';
 import { ToBuy } from './ToBuy';
-import { Sky } from './Sky';
+import { ConstellationBrowser } from './ConstellationBrowser';
 import { Evol, type EvolTarget } from './Evol';
 import { Iris } from './Iris';
 import './iris.css';
@@ -42,7 +42,8 @@ export default function App() {
  const [connecting,setConnecting]=useState(false);
  const [lens,setLens]=useState('all');
  const [lensYear,setLensYear]=useState(new Date().getFullYear());
- const beginConnect=()=>{setVoidOpen(true);setConnecting(true);closeNode()};
+ const browseConstellations=()=>{closeNode();setPanel('constellations')};
+ const beginConnect=()=>{setPanel(null);setVoidOpen(true);setConnecting(true);closeNode()};
  const selectStar=(id:string)=>{if(connecting&&voidOpen)setLinkIds(ids=>ids.includes(id)?ids.filter(v=>v!==id):[...ids,id]);else pinNode(id)};
  const recordFilter=voidOpen&&lens!=='all'?{year:lensYear,season:({winter:0,spring:1,summer:2,autumn:3} as Record<string,number>)[lens]}:undefined;
  const tomorrow=addDaysISO(date,1);
@@ -56,7 +57,7 @@ export default function App() {
  const add=()=>{if(draft.trim()){o.addEntries(date,draft.split(/\r?\n/));setDraft('')}};
  const exportData=()=>{const blob=new Blob([JSON.stringify({schema:'orbitals.archive',version:1,exportedAt:new Date().toISOString(),...o.data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='orbitals-archive.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
  return <div className={'iris-app transmission-layout '+(voidOpen?'eye-mode':'')}>
-  <CommandLine entries={o.data.entries} onAddOrbit={o.addOrbit} onAddToday={t=>{o.addEntries(todayISO(),[t]);focusDay(todayISO())}} onGather={t=>o.addBuyItem(t)} onGo={focusDay} onEye={()=>{closeNode();setVoidOpen(true)}} onConnect={beginConnect} onEscape={()=>{setDate(todayISO());setViewRequest(r=>({kind:'reset',nonce:r.nonce+1}));closeNode();setPanel(null);setVoidOpen(false);setConnecting(false)}} onSelect={id=>{pinNode(id);const e=o.data.entries.find(v=>v.id===id);if(e&&!e.orbiting)setDate(e.date)}}/>
+  <CommandLine entries={o.data.entries} onAddOrbit={o.addOrbit} onAddToday={t=>{o.addEntries(todayISO(),[t]);focusDay(todayISO())}} onGather={t=>o.addBuyItem(t)} onGo={focusDay} onEye={()=>{closeNode();setVoidOpen(true)}} onConnect={beginConnect} onConstellation={browseConstellations} onEscape={()=>{setDate(todayISO());setViewRequest(r=>({kind:'reset',nonce:r.nonce+1}));closeNode();setPanel(null);setVoidOpen(false);setConnecting(false)}} onSelect={id=>{pinNode(id);const e=o.data.entries.find(v=>v.id===id);if(e&&!e.orbiting)setDate(e.date)}}/>
   <aside className="notebook">
    <header className="wordmark">orbitals<span>a life, unfolding</span></header>
    <div className="date-line"><button aria-label="Previous day" onClick={()=>setDate(addDaysISO(date,-1))}><ArrowLeft size={15}/></button><label>{format}<input aria-label="Choose day" type="date" value={date} onChange={e=>e.target.value&&setDate(e.target.value)}/></label><button aria-label="Next day" onClick={()=>setDate(addDaysISO(date,1))}><ArrowRight size={15}/></button></div>
@@ -71,7 +72,7 @@ export default function App() {
    <footer className="notebook-footer"><button onClick={()=>setEvol({kind:'day',date})}><Sparkles size={13}/> with Evol</button><button aria-label="Download your archive" onClick={exportData}><Download size={14}/></button></footer>
   </aside>
   <main className="sky-room">
-   <div className="sky-top"><span>{date.slice(0,4)} <i>·</i> {study?'a study of a possible sky':'your unfolding sky'}</span><div className="sky-top-actions"><button onClick={beginConnect}>constellations ↗</button><button onClick={()=>{closeNode();setVoidOpen(true)}}>enter the eye ⤢</button></div></div>
+   <div className="sky-top"><span>{date.slice(0,4)} <i>·</i> {study?'a study of a possible sky':'your unfolding sky'}</span><div className="sky-top-actions"><button onClick={browseConstellations}>constellations ↗</button><button onClick={()=>{closeNode();setVoidOpen(true)}}>enter the eye ⤢</button></div></div>
    <Iris data={o.data} date={date} selected={selected??hovered} onSelect={selectStar} onHover={connecting&&voidOpen?undefined:previewNode} recordFilter={recordFilter} connectedIds={connecting&&voidOpen?linkIds:[]} viewRequest={viewRequest} scale="years" study={study}/>
    <div className="sky-caption"><span>scroll to zoom · right-drag to pan</span><button className="text-link" onClick={()=>setStudy(!study)}>{study?'return to my sky':'explore a sample sky'}</button></div>
    {chosen&&!selected&&<div className="ghost-task-preview" aria-hidden="true"><small>{chosen.orbiting?'in orbit':chosen.date} · click star to hold</small><strong>{chosen.text}</strong>{chosen.note&&<p>{chosen.note}</p>}</div>}
@@ -80,14 +81,15 @@ export default function App() {
   </main>
   <GatheringRail items={o.data.buyItems} records={o.data.financialRecords} onAdd={o.addBuyItem} onUpdate={o.updateBuyItem} onDelete={o.deleteBuyItem} onRecord={o.addFinancialRecord}/>
   <SkyJournal logs={o.data.moodJournal} onAdd={o.addMood}/>
-  {panel&&panel!=='events'&&<div className="drawer-shade" onClick={()=>setPanel(null)}><section className="planner-drawer" role="dialog" aria-modal="true" aria-label={panel} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.key==='Escape'&&setPanel(null)}><button autoFocus className="drawer-close" aria-label="Close panel" onClick={()=>setPanel(null)}><X size={20}/></button>
+  {panel&&panel!=='events'&&panel!=='constellations'&&<div className="drawer-shade" onClick={()=>setPanel(null)}><section className="planner-drawer" role="dialog" aria-modal="true" aria-label={panel} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.key==='Escape'&&setPanel(null)}><button autoFocus className="drawer-close" aria-label="Close panel" onClick={()=>setPanel(null)}><X size={20}/></button>
   
   {panel==='returning'&&<Recurring series={o.data.series} entries={o.data.entries} onAdd={o.addSeries} onUpdate={o.updateSeries} onDelete={o.deleteSeries}/>}
   {panel==='gathering'&&<ToBuy items={o.data.buyItems} onAdd={o.addBuyItem} onUpdate={o.updateBuyItem} onDelete={o.deleteBuyItem}/>}
-  {panel==='constellations'&&<><div className="link-compose"><h2>draw a connection</h2><p>Choose moments that belong together—even across years.</p><input aria-label="Constellation name" placeholder="name this constellation…" value={linkName} onChange={e=>setLinkName(e.target.value)}/><div className="link-choices">{o.data.entries.map(e=><label key={e.id}><input type="checkbox" checked={linkIds.includes(e.id)} onChange={()=>setLinkIds(ids=>ids.includes(e.id)?ids.filter(id=>id!==e.id):[...ids,e.id])}/><span>{e.text}<small>{e.date??'in orbit'}</small></span></label>)}</div><button disabled={!linkName.trim()||linkIds.length<2} onClick={()=>{o.createConstellation(linkName.trim(),linkIds);setLinkIds([]);setLinkName('')}}>connect these moments</button></div><Sky data={o.data} onCreate={o.createConstellation} onUpdate={o.updateConstellation} onDelete={o.deleteConstellation} onOpenDay={d=>{setDate(d);setPanel(null)}} onRecall={o.recallOrbital}/></>}
+
   </section></div>}
+  {panel==='constellations'&&<ConstellationBrowser data={o.data} onClose={()=>setPanel(null)} onOpenDay={d=>{focusDay(d);setPanel(null)}} onSelect={id=>{pinNode(id);setPanel(null)}}/>}
   {panel==='events'&&<TransmissionBox className="event-transmission" label="A place in the future"><button className="detail-close" aria-label="Close future event" onClick={()=>setPanel(null)}><X size={16}/></button><FutureEvents entries={o.data.entries} onAdd={o.addEvent} onOpen={d=>{focusDay(d);setPanel(null)}} onUpdate={o.updateEntry}/></TransmissionBox>}
-  {voidOpen&&<EyeControls connecting={connecting} onConnect={()=>setConnecting(!connecting)} onExit={()=>{setVoidOpen(false);setConnecting(false)}} lens={lens} onLens={setLens} year={lensYear} onYear={setLensYear} ids={linkIds} name={linkName} onName={setLinkName} onSave={()=>{o.createConstellation(linkName.trim(),linkIds);setLinkIds([]);setLinkName('')}} onClear={()=>setLinkIds([])}/>}
+  {voidOpen&&<EyeControls onBrowse={browseConstellations} connecting={connecting} onConnect={()=>setConnecting(!connecting)} onExit={()=>{setVoidOpen(false);setConnecting(false)}} lens={lens} onLens={setLens} year={lensYear} onYear={setLensYear} ids={linkIds} name={linkName} onName={setLinkName} onSave={()=>{o.createConstellation(linkName.trim(),linkIds);setLinkIds([]);setLinkName('')}} onClear={()=>setLinkIds([])}/>}
 
   {evol&&<Evol data={o.data} target={evol} onClose={()=>setEvol(null)} onImport={o.importArchive} onApplyPlan={items=>{for(const item of items){const existing=entries.find(e=>e.text.toLowerCase()===item.text.toLowerCase());if(item.op==='remove'){if(existing)o.deleteEntry(existing.id)}else if(existing)o.updateEntry(existing.id,{done:item.op==='complete'});else o.addEntries(date,[item.text],undefined,item.op==='complete')}}}/>}
  </div>
