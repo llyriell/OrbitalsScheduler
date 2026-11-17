@@ -1,3 +1,4 @@
+import { EyeAtmosphere } from './EyeAtmosphere';
 import { useMemo } from 'react';
 import type { AppData } from './types';
 
@@ -25,11 +26,11 @@ export function Iris({data,date,selected,onSelect,scale,study}:{data:AppData;dat
  },[study]);
  const maxRadius=100+(years+1)*46;
  const zoom=scale==='years'?Math.min(1,365/maxRadius):scale==='season'?1.15:1;
- const nodes=data.entries.map(e=>{const d=e.date??new Date(e.createdAt).toISOString().slice(0,10);return {...orbitalPoint(d,first,hash(e.id)*25),entry:e}});
+ const nodes=data.entries.map(e=>{const d=e.date??new Date(e.createdAt).toISOString().slice(0,10);if(e.orbiting){const a=hash(e.id)*TAU;const r=Math.max(335,maxRadius+45)+hash(e.id+'outer')*30;return {x:450+Math.cos(a)*r,y:450+Math.sin(a)*r,a,r,entry:e}}const siblings=data.entries.filter(v=>!v.orbiting&&v.date===e.date);const slot=siblings.findIndex(v=>v.id===e.id);return {...orbitalPoint(d,first,12+slot*18+hash(e.id)*7),entry:e}});
  const byId=new Map(nodes.map(n=>[n.entry.id,n]));
  const active=nodes.find(n=>n.entry.id===selected);
  let spiral='';for(let t=0;t<=years;t+=.008){const a=t*TAU-Math.PI/2;const r=100+t*46;spiral+=(t===0?'M':'L')+(450+Math.cos(a)*r).toFixed(2)+','+(450+Math.sin(a)*r).toFixed(2)}
- return <div className="iris-field"><svg viewBox="0 0 900 900" role="group" aria-label="Your orbital sky: each full turn represents a year">
+ return <div className="iris-field"><EyeAtmosphere/><svg viewBox="0 0 900 900" role="group" aria-label="Your orbital sky: each full turn represents a year">
   <defs><filter id="node-glow" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="3"/></filter><radialGradient id="halo"><stop offset="0" stopColor="#ddc596" stopOpacity=".055"/><stop offset="1" stopColor="#ddc596" stopOpacity="0"/></radialGradient></defs>
   <circle cx="450" cy="450" r="415" fill="url(#halo)"/>
   <g transform={'translate(450 450) scale('+zoom+') translate(-450 -450)'}>
@@ -38,7 +39,7 @@ export function Iris({data,date,selected,onSelect,scale,study}:{data:AppData;dat
    {Array.from({length:years+1},(_,i)=><g key={i}><circle cx="450" cy={450-100-i*46} r="2" fill="#a48e63"/><text x="462" y={454-100-i*46} className="year-label">{first+i}</text></g>)}
    {data.traces.map(t=>{const target=byId.get(t.entryId);if(!target||!t.fromDate)return null;const p=orbitalPoint(t.fromDate,first,hash(t.entryId)*25);return <path className="trace-thread" key={t.id} d={'M'+p.x+','+p.y+' Q450,450 '+target.x+','+target.y}/>})}
    {data.constellations.map(c=>{const ns=c.entryIds.map(id=>byId.get(id)).filter((n):n is NonNullable<typeof n>=>Boolean(n));return <g key={c.id} className="constellation-threads">{ns.slice(1).map((n,i)=><path key={n.entry.id} d={'M'+ns[i].x+','+ns[i].y+' Q'+((ns[i].x+n.x)/2+25)+','+((ns[i].y+n.y)/2-35)+' '+n.x+','+n.y}/>)}{ns[0]&&<text x={ns[0].x+12} y={ns[0].y-15}>{c.name}</text>}</g>})}
-   {nodes.map(n=>{const lit=n.entry.done||selected===n.entry.id;const root=orbitalPoint(n.entry.date??new Date(n.entry.createdAt).toISOString().slice(0,10),first);return <g key={n.entry.id} className={'orbital-node '+(lit?'lit':'')}><path className="entry-thread" d={'M'+root.x+','+root.y+' Q'+(n.x+15)+','+(n.y-30)+' '+n.x+','+n.y}/><g role="button" tabIndex={0} aria-label={n.entry.text+(n.entry.done?', fulfilled':'')} onClick={()=>onSelect(n.entry.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(n.entry.id)}}}><title>{n.entry.text}</title><circle cx={n.x} cy={n.y} r="13" fill="transparent"/><circle cx={n.x} cy={n.y} r={lit?6:3} className="node-halo" filter="url(#node-glow)"/><circle cx={n.x} cy={n.y} r={lit?3.2:2} className="node-core"/>{(selected===n.entry.id||scale==='today'&&n.entry.date===date)&&<text x={n.x+14} y={n.y+4} className="node-label">{n.entry.text.length>30?n.entry.text.slice(0,29)+'…':n.entry.text}</text>}</g></g>})}
+   {nodes.map(n=>{const lit=n.entry.done||selected===n.entry.id;const root=orbitalPoint(n.entry.date??new Date(n.entry.createdAt).toISOString().slice(0,10),first);return <g key={n.entry.id} className={'orbital-node '+(lit?'lit':'')}><path className={n.entry.orbiting?"loose-thread":"entry-thread"} d={'M'+root.x+','+root.y+' Q'+(n.x+15)+','+(n.y-30)+' '+n.x+','+n.y}/><g role="button" tabIndex={0} aria-label={n.entry.text+(n.entry.done?', fulfilled':'')} onClick={()=>onSelect(n.entry.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect(n.entry.id)}}}><title>{n.entry.text}</title><circle cx={n.x} cy={n.y} r="13" fill="transparent"/><circle cx={n.x} cy={n.y} r={lit?6:3} className="node-halo" filter="url(#node-glow)"/><circle cx={n.x} cy={n.y} r={lit?3.2:2} className="node-core"/>{(n.entry.orbiting||selected===n.entry.id)&&<text x={n.x+(n.x>650?-14:14)} textAnchor={n.x>650?"end":"start"} y={n.y+4} className="node-label">{(n.entry.orbiting?'◌ ':'')+(n.entry.text.length>30?n.entry.text.slice(0,29)+'…':n.entry.text)}</text>}</g></g>})}
    {!nodes.length&&!study&&<g className="iris-center"><text x="450" y="444" textAnchor="middle">a beginning</text><text x="450" y="468" textAnchor="middle" className="center-small">your first thread starts today</text></g>}
    {study&&<g className="sample-labels"><text x="190" y="170">TenderMends</text><text x="700" y="260">garden</text><text x="715" y="590">a home</text><text x="180" y="710">making</text></g>}
    {active&&<circle cx={active.x} cy={active.y} r="10" fill="none" stroke="#d7b77b" strokeWidth=".6"/>}

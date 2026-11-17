@@ -25,6 +25,7 @@ export function parseArchive(json: string): AppData {
     buyItems: d.buyItems,
     constellations: d.constellations,
     moods: d.moods && typeof d.moods === 'object' ? d.moods : {},
+    moodJournal: Array.isArray(d.moodJournal) ? d.moodJournal : Object.entries(d.moods??{}).map(([date,mood])=>({...mood,id:'legacy_'+date,date})),
   };
 }
 
@@ -38,7 +39,9 @@ export function dayContext(data: AppData, date: string): string {
   if (mood) {
     lines.push(`Mood: **${mood.icon}**${mood.text ? ` — ${mood.text}` : ''}`, '');
   }
-  const entries = data.entries.filter((e) => e.date === date).sort(sortEntries);
+  const journal=data.moodJournal.filter(m=>m.date===date);
+  if(journal.length){lines.push('## Sky journal','');for(const m of journal)lines.push('- '+(m.recordedAt?new Date(m.recordedAt).toLocaleTimeString():'time not recorded')+' — '+m.icon+(m.text?' — '+m.text:''));lines.push('');}
+  const entries = data.entries.filter((e) => e.date === date&&!e.orbiting).sort(sortEntries);
   if (entries.length) {
     lines.push('## Stack', '');
     for (const e of entries) {
@@ -64,7 +67,7 @@ export function constellationContext(data: AppData, c: Constellation): string {
   const entries = c.entryIds
     .map((id) => data.entries.find((e) => e.id === id))
     .filter((e): e is Entry => Boolean(e))
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => (a.date??'').localeCompare(b.date??''));
   for (const e of entries) {
     lines.push(`- **${e.date}** — ${e.text}${e.done ? ' _(done)_' : ''}`);
     if (e.note) lines.push(`  - _${e.note}_`);

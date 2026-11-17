@@ -1,0 +1,10 @@
+import { useState } from 'react';
+import { MOODS } from './components/Mood';
+import type { Mood,MoodIcon,MoodLog } from './types';
+export function SkyJournal({date,logs,onAdd}:{date:string;logs:MoodLog[];onAdd:(date:string,mood:Mood)=>void}){
+ const [icon,setIcon]=useState<MoodIcon|null>(null);const [text,setText]=useState('');const [all,setAll]=useState(false);
+ const visible=logs.filter(m=>all||m.date===date).slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.recordedAt??0)-(a.recordedAt??0));
+ return <div className="sky-journal"><div className="journal-heading"><span>sky within</span><button className="text-link" onClick={()=>setAll(!all)}>{all?'this day':'journal ↗'}</button></div><div className="mood-options">{MOODS.map(m=><button key={m.icon} aria-label={m.label} title={m.label} aria-pressed={icon===m.icon} onClick={()=>setIcon(m.icon)}><m.Lucide size={18} strokeWidth={1.4}/></button>)}</div>
+ {icon&&<form onSubmit={e=>{e.preventDefault();onAdd(date,{icon,text:text.trim()||undefined});setIcon(null);setText('')}}><textarea aria-label="A note about your sky" value={text} onChange={e=>setText(e.target.value)} placeholder="How is the weather within?" rows={2}/><div className="form-actions"><button>leave this sky · {MOODS.find(m=>m.icon===icon)?.label}</button><button type="button" onClick={()=>setIcon(null)}>cancel</button></div></form>}
+ <div className={all?'journal-records expanded':'journal-records'}>{visible.slice(0,all?undefined:3).map(m=>{const M=MOODS.find(v=>v.icon===m.icon);return <article key={m.id}>{M&&<M.Lucide size={14}/>}<div><small>{all?m.date+' · ':''}{m.recordedAt?new Date(m.recordedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'time not recorded'} · {M?.label}</small>{m.text&&<p>{m.text}</p>}</div></article>})}</div>{visible.length>3&&!all&&<button className="text-link" onClick={()=>setAll(true)}>all {visible.length} skies ↗</button>}</div>
+}

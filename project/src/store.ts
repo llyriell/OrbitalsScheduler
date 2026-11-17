@@ -1,3 +1,5 @@
+import { seriesOn } from './schedule';
+export { recursOn } from './schedule';
 import { useCallback, useEffect, useState } from 'react';
 import type {
   ArchiveData,
@@ -7,7 +9,6 @@ import type {
   Entry,
   LedgerKind,
   Mood,
-  RecurrenceRule,
   RecurringSeries,
   Trace,
 } from './types';
@@ -44,6 +45,7 @@ const emptyData: AppData = {
   buyItems: [],
   constellations: [],
   moods: {},
+  moodJournal: [],
 };
 
 function sanitize(raw: unknown): AppData {
@@ -56,6 +58,7 @@ function sanitize(raw: unknown): AppData {
     buyItems: Array.isArray(d.buyItems) ? d.buyItems : [],
     constellations: Array.isArray(d.constellations) ? d.constellations : [],
     moods: d.moods && typeof d.moods === 'object' ? d.moods : {},
+    moodJournal: Array.isArray(d.moodJournal) ? d.moodJournal : Object.entries(d.moods??{}).map(([date,mood])=>({...mood,id:'legacy_'+date,date})),
   };
 }
 
@@ -184,6 +187,14 @@ export function useOrbitals() {
     });
   }, []);
 
+  const addMood = useCallback((date: string, mood: Mood) => {
+    const log = {...mood,id:uid('m'),date,recordedAt:Date.now()};
+    setData(d=>({...d,moods:{...d.moods,[date]:mood},moodJournal:[...d.moodJournal,log]}));
+  },[]);
+  const addEvent = useCallback((date:string,text:string,time?:string,note?:string)=>{
+    const entry:Entry={id:uid('e'),text:text.trim(),date,time,note,kind:'event',done:false,orbiting:false,order:0,createdAt:Date.now()};
+    if(entry.text&&date)setData(d=>({...d,entries:[...d.entries,entry]}));
+  },[]);
   // Recurring series
   const addSeries = useCallback((series: Omit<RecurringSeries, 'id' | 'createdAt'>) => {
     const s: RecurringSeries = { ...series, id: uid('s'), createdAt: Date.now() };
@@ -202,7 +213,7 @@ export function useOrbitals() {
     setData((d) => ({
       ...d,
       series: d.series.filter((s) => s.id !== id),
-      entries: d.entries.filter((e) => e.seriesId !== id),
+      entries: d.entries,
     }));
   }, []);
 
@@ -213,7 +224,7 @@ export function useOrbitals() {
       for (const s of d.series) {
         if (s.paused) continue;
         if (s.skippedDates?.includes(date)) continue;
-        if (!recursOn(s.rule, s.anchorDate, date)) continue;
+        if (!seriesOn(s, date)) continue;
         if (entries.some((e) => e.seriesId === s.id && e.date === date)) continue;
         const occ: Entry = {
           id: uid('e'),
@@ -300,6 +311,8 @@ export function useOrbitals() {
     recallOrbital,
     reorderEntry,
     setMood,
+    addMood,
+    addEvent,
     addSeries,
     updateSeries,
     deleteSeries,
@@ -312,22 +325,6 @@ export function useOrbitals() {
     deleteConstellation,
     importArchive,
   };
-}
-
-export function recursOn(rule: RecurrenceRule, anchorDate: string, date: string): boolean {
-  if (date < anchorDate) return false;
-  const [am, ad] = anchorDate.split('-').map(Number).slice(1);
-  const [m, d] = date.split('-').map(Number).slice(1);
-  switch (rule) {
-    case 'daily':
-      return true;
-    case 'weekly':
-      return dowOf(anchorDate) === dowOf(date);
-    case 'monthly':
-      return d === ad;
-    case 'yearly':
-      return m === am && d === ad;
-  }
 }
 
 export function dowOf(iso: string): number {

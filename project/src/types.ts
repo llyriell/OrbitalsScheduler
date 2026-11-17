@@ -5,7 +5,11 @@ export interface Mood {
   text?: string;
 }
 
+export interface MoodLog extends Mood { id: string; date: string; recordedAt?: number; }
+
 export interface Entry {
+  kind?: 'task' | 'event';
+  time?: string;
   id: string;
   text: string;
   date: string; // ISO yyyy-mm-dd; undefined when orbiting
@@ -26,7 +30,7 @@ export interface Trace {
   seriesId?: string;
 }
 
-export type RecurrenceRule = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type RecurrenceRule = 'daily' | 'every_other_day' | 'weekdays' | 'weekly' | 'monthly' | 'yearly';
 
 export interface RecurringSeries {
   id: string;
@@ -34,6 +38,7 @@ export interface RecurringSeries {
   rule: RecurrenceRule;
   anchorDate: string;
   paused: boolean;
+  weekdays?: number[];
   skippedDates?: string[];
   createdAt: number;
 }
@@ -66,6 +71,7 @@ export interface AppData {
   buyItems: BuyItem[];
   constellations: Constellation[];
   moods: Record<string, Mood>;
+  moodJournal: MoodLog[];
 }
 
 export interface ArchiveData extends AppData {
