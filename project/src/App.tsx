@@ -1,228 +1,59 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Moon, Repeat, Settings2, ShoppingCart, Star } from 'lucide-react';
-import { Today } from './Today';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, Plus, X, Wind, Download, Sparkles } from 'lucide-react';
+import { useOrbitals, todayISO, addDaysISO } from './store';
+import { MoodPicker } from './components/Mood';
 import { Recurring } from './Recurring';
 import { ToBuy } from './ToBuy';
 import { Sky } from './Sky';
 import { Evol, type EvolTarget } from './Evol';
-import { SkyBackdrop } from './components/SkyBackdrop';
-import { useSwipe } from './components/useSwipe';
-import { useOrbitals, todayISO } from './store';
-import type { AppData } from './types';
+import { Iris } from './Iris';
+import './iris.css';
 
-type Tab = 'today' | 'recurring' | 'buy' | 'sky';
-const TAB_ORDER: Tab[] = ['today', 'recurring', 'buy', 'sky'];
-
+type Panel = 'returning' | 'gathering' | 'constellations' | null;
 export default function App() {
-  const o = useOrbitals();
-  const [tab, setTab] = useState<Tab>('today');
-  const [evolTarget, setEvolTarget] = useState<EvolTarget | null>(null);
-  const [viewDate, setViewDate] = useState<string | null>(null);
-
-  const orbitingCount = useMemo(
-    () => o.data.entries.filter((e) => e.orbiting).length,
-    [o.data.entries],
-  );
-
-  const openDay = (date: string) => {
-    setViewDate(date);
-    setTab('today');
-  };
-
-  const swipe = useSwipe(
-    () => setTab((t) => TAB_ORDER[Math.min(TAB_ORDER.indexOf(t) + 1, TAB_ORDER.length - 1)]),
-    () => setTab((t) => TAB_ORDER[Math.max(TAB_ORDER.indexOf(t) - 1, 0)]),
-  );
-
-  const applyPlan: React.ComponentProps<typeof Evol>['onApplyPlan'] = (items) => {
-    if (!evolTarget || evolTarget.kind !== 'day') return;
-    const date = evolTarget.date;
-    const dayEntries = o.data.entries.filter((e) => e.date === date);
-    const toAdd: string[] = [];
-    for (const it of items) {
-      const existing = dayEntries.find(
-        (e) => e.text.toLowerCase() === it.text.toLowerCase() && e.seriesId === undefined,
-      );
-      switch (it.op) {
-        case 'add':
-          if (existing) o.updateEntry(existing.id, { done: false });
-          else toAdd.push(it.text);
-          break;
-        case 'complete':
-          if (existing) o.updateEntry(existing.id, { done: true });
-          else toAdd.push(it.text);
-          break;
-        case 'remove':
-          if (existing) o.deleteEntry(existing.id);
-          break;
-        default:
-          break;
-      }
-    }
-    if (toAdd.length) o.addEntries(date, toAdd);
-  };
-
-  // Yesterday's unfinished tasks notice
-  const yesterday = useMemo(() => {
-    const t = todayISO();
-    const [y, m, d] = t.split('-').map(Number);
-    const dt = new Date(y, m - 1, d - 1);
-    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-  }, []);
-  const yesterdayUnfinished = useMemo(
-    () => o.data.entries.filter((e) => e.date === yesterday && !e.done).length,
-    [o.data.entries, yesterday],
-  );
-
-  const counts = {
-    buyOpen: o.data.buyItems.filter((b) => !b.bought).length,
-  };
-
-  const activeDate = viewDate ?? todayISO();
-
-  return (
-    <div className="sky-bg min-h-screen" {...swipe}>
-      <SkyBackdrop data={o.data} date={activeDate} />
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-gold-500/10 bg-ink-950/60 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <Star size={15} className="text-gold-400 glow-star" fill="currentColor" />
-            <span className="font-serif text-lg tracking-wide text-ivory-bright">Orbitals</span>
-          </div>
-          <button
-            onClick={() => setEvolTarget({ kind: 'day', date: activeDate })}
-            className="flex items-center gap-1.5 rounded-full border border-gold-500/25 px-3 py-1.5 text-xs tracking-wide text-gold-300 backdrop-blur transition hover:border-gold-500/50 hover:bg-gold-500/10"
-          >
-            <Settings2 size={13} />
-            Evol
-          </button>
-        </div>
-      </header>
-
-      <main>
-        {tab === 'today' && (
-          <Today
-            key={activeDate}
-            entries={o.data.entries}
-            mood={o.data.moods[activeDate]}
-            onAdd={(texts) => o.addEntries(activeDate, texts)}
-            onToggleDone={(id, done) => o.updateEntry(id, { done })}
-            onMove={(id, toDate) => o.moveEntry(id, toDate)}
-            onLetOrbit={(id) => o.letOrbit(id)}
-            onReorder={(date, id, targetId) => o.reorderEntry(date, id, targetId)}
-            onUpdateText={(id, text) => o.updateEntry(id, { text })}
-            onUpdateNote={(id, note) => o.updateEntry(id, { note: note || undefined })}
-            onSetMood={(m) => o.setMood(activeDate, m)}
-          />
-        )}
-        {tab === 'recurring' && (
-          <Recurring
-            series={o.data.series}
-            entries={o.data.entries}
-            onAdd={(s) => o.addSeries(s)}
-            onUpdate={(id, patch) => o.updateSeries(id, patch)}
-            onDelete={(id) => o.deleteSeries(id)}
-          />
-        )}
-        {tab === 'buy' && (
-          <ToBuy
-            items={o.data.buyItems}
-            onAdd={(t, kind, amount, category) => o.addBuyItem(t, kind, amount, category)}
-            onUpdate={(id, patch) => o.updateBuyItem(id, patch)}
-            onDelete={(id) => o.deleteBuyItem(id)}
-          />
-        )}
-        {tab === 'sky' && (
-          <Sky
-            data={o.data}
-            onCreate={(name, ids) => o.createConstellation(name, ids)}
-            onUpdate={(id, patch) => o.updateConstellation(id, patch)}
-            onDelete={(id) => o.deleteConstellation(id)}
-            onOpenDay={openDay}
-            onRecall={(id, toDate) => o.recallOrbital(id, toDate)}
-          />
-        )}
-      </main>
-
-      <Materialize onTick={() => o.materializeRecurring(todayISO())} />
-
-      {/* Yesterday notice */}
-      {tab === 'today' && !viewDate && yesterdayUnfinished > 0 && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-30 flex justify-center px-4">
-          <button
-            onClick={() => {
-              setViewDate(yesterday);
-              setTab('today');
-            }}
-            className="glass pointer-events-auto rounded-full px-4 py-2 text-xs text-ivory-dim transition hover:text-gold-300"
-          >
-            {yesterdayUnfinished} unfinished from yesterday — decide what to do with them
-          </button>
-        </div>
-      )}
-
-      {/* Bottom tabs */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-500/10 bg-ink-950/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-3xl items-stretch justify-around px-2 py-1.5">
-          {(
-            [
-              ['today', 'Today', CalendarDays],
-              ['recurring', 'Recurring', Repeat],
-              ['buy', 'To Buy', ShoppingCart],
-              ['sky', 'Sky', Moon],
-            ] as [Tab, string, typeof CalendarDays][]
-          ).map(([t, label, Icon]) => {
-            const active = tab === t;
-            const badge =
-              t === 'sky' && orbitingCount > 0
-                ? orbitingCount
-                : t === 'buy' && counts.buyOpen > 0
-                  ? counts.buyOpen
-                  : undefined;
-            return (
-              <button
-                key={t}
-                onClick={() => {
-                  setTab(t);
-                  if (t === 'today') setViewDate(null);
-                }}
-                className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[11px] tracking-wide transition ${
-                  active ? 'text-gold-300' : 'text-ivory-faint hover:text-ivory-dim'
-                }`}
-              >
-                <Icon size={18} strokeWidth={active ? 2.2 : 1.7} />
-                {label}
-                {badge !== undefined && (
-                  <span className="absolute right-2 top-0.5 rounded-full bg-gold-500/20 px-1.5 text-[9px] text-gold-300">
-                    {badge}
-                  </span>
-                )}
-                {active && <span className="absolute inset-x-6 top-0 h-px bg-gold-400/70" />}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {evolTarget && (
-        <Evol
-          data={o.data}
-          target={evolTarget}
-          onApplyPlan={applyPlan}
-          onImport={(d: AppData) => o.importArchive(d)}
-          onClose={() => setEvolTarget(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-function Materialize({ onTick }: { onTick: () => void }) {
-  useEffect(() => {
-    onTick();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return null;
+ const o = useOrbitals();
+ const [date,setDate]=useState(todayISO);
+ const [panel,setPanel]=useState<Panel>(null);
+ const [scale,setScale]=useState<'today'|'season'|'years'>('today');
+ const [draft,setDraft]=useState('');
+ const [selected,setSelected]=useState<string|null>(null);
+ const [evol,setEvol]=useState<EvolTarget|null>(null);
+ const [study,setStudy]=useState(false);
+ const [linkName,setLinkName]=useState('');
+ const [linkIds,setLinkIds]=useState<string[]>([]);
+ useEffect(()=>{o.materializeRecurring(date)},[date,o.materializeRecurring,o.data.series]);
+ const entries=o.data.entries.filter(e=>e.date===date&&!e.orbiting).sort((a,b)=>a.order-b.order);
+ const chosen=o.data.entries.find(e=>e.id===selected);
+ const format=new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long'});
+ const add=()=>{if(draft.trim()){o.addEntries(date,draft.split(/\r?\n/));setDraft('')}};
+ const exportData=()=>{const blob=new Blob([JSON.stringify({schema:'orbitals.archive',version:1,exportedAt:new Date().toISOString(),...o.data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='orbitals-archive.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+ return <div className="iris-app">
+  <aside className="notebook">
+   <header className="wordmark">orbitals<span>a life, unfolding</span></header>
+   <div className="date-line"><button aria-label="Previous day" onClick={()=>setDate(addDaysISO(date,-1))}><ArrowLeft size={15}/></button><label>{format}<input aria-label="Choose day" type="date" value={date} onChange={e=>e.target.value&&setDate(e.target.value)}/></label><button aria-label="Next day" onClick={()=>setDate(addDaysISO(date,1))}><ArrowRight size={15}/></button></div>
+   {date!==todayISO()&&<button className="text-link" onClick={()=>setDate(todayISO())}>return to today</button>}
+   <section className="within"><h1>within reach <span/></h1>
+    <ul className="daily-list">{entries.map(e=><li key={e.id} className={e.done?'fulfilled':''}><button className="task-light" aria-label={(e.done?'Reopen ':'Complete ')+e.text} aria-pressed={e.done} onClick={()=>o.updateEntry(e.id,{done:!e.done})}/><button className={selected===e.id?'entry-title active':'entry-title'} onClick={()=>setSelected(e.id)}>{e.text}</button></li>)}</ul>
+    {!entries.length&&<p className="empty-note">A little space for what calls to you today.</p>}
+    <form className="add-line" onSubmit={e=>{e.preventDefault();add()}}><textarea aria-label="New orbitals" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="place something in orbit…" rows={2} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();add()}}}/><button aria-label="Add orbitals" disabled={!draft.trim()}><Plus size={17}/></button></form>
+   </section>
+   <section><h2><button onClick={()=>setPanel('returning')}>returning</button><span/><button aria-label="Manage recurring tasks" onClick={()=>setPanel('returning')}><Plus size={15}/></button></h2>{o.data.series.slice(0,3).map(s=><button className="side-item" key={s.id} onClick={()=>setPanel('returning')}><span className="small-orbit"/> {s.title}<small>{s.paused?'resting':s.rule}</small></button>)}{!o.data.series.length&&<button className="empty-note" onClick={()=>setPanel('returning')}>Give something a rhythm.</button>}</section>
+   <section><h2><button onClick={()=>setPanel('gathering')}>gathering</button><span/><button aria-label="Manage purchases" onClick={()=>setPanel('gathering')}><Plus size={15}/></button></h2>{o.data.buyItems.filter(b=>!b.bought).slice(0,3).map(b=><button className="side-item" key={b.id} onClick={()=>setPanel('gathering')}><span className="small-orbit"/>{b.text}</button>)}{!o.data.buyItems.some(b=>!b.bought)&&<button className="empty-note" onClick={()=>setPanel('gathering')}>Materials, wishes, things to gather.</button>}</section>
+   <section className="weather"><MoodPicker value={o.data.moods[date]} onChange={m=>o.setMood(date,m)}/></section>
+   <footer className="notebook-footer"><button onClick={()=>setEvol({kind:'day',date})}><Sparkles size={13}/> with Evol</button><button aria-label="Download your archive" onClick={exportData}><Download size={14}/></button></footer>
+  </aside>
+  <main className="sky-room">
+   <div className="sky-top"><span>{date.slice(0,4)} <i>·</i> {study?'a study of a possible sky':'your unfolding sky'}</span><button onClick={()=>setPanel('constellations')}>constellations ↗</button></div>
+   <Iris data={o.data} date={date} selected={selected} onSelect={setSelected} scale={scale} study={study}/>
+   <div className="sky-caption"><span>one turn, one year</span><button className="text-link" onClick={()=>setStudy(!study)}>{study?'return to my sky':'explore a sample sky'}</button></div>
+   {chosen&&<section className="thread-detail" aria-label="Selected orbital"><button className="detail-close" aria-label="Close orbital" onClick={()=>setSelected(null)}><X size={16}/></button><small>{chosen.orbiting?'resting in orbit':chosen.date} · {chosen.done?'fulfilled':'unfolding'}</small><input aria-label="Orbital title" value={chosen.text} onChange={e=>o.updateEntry(chosen.id,{text:e.target.value})}/><textarea aria-label="Orbital note" placeholder="leave a little trace…" value={chosen.note??''} onChange={e=>o.updateEntry(chosen.id,{note:e.target.value})}/><div className="detail-actions"><button onClick={()=>o.updateEntry(chosen.id,{done:!chosen.done})}>{chosen.done?'reopen':'mark fulfilled'}</button>{chosen.orbiting?<button onClick={()=>o.recallOrbital(chosen.id,date)}>bring into today</button>:<button onClick={()=>o.letOrbit(chosen.id)}><Wind size={13}/> let orbit</button>}</div><label className="move-date">return on <input aria-label="Move orbital to date" type="date" value={chosen.date??''} onChange={e=>{if(e.target.value){if(chosen.orbiting)o.recallOrbital(chosen.id,e.target.value);else o.moveEntry(chosen.id,e.target.value)}}}/></label></section>}
+   <footer className="sky-footer"><nav aria-label="Time scale">{(['today','season','years'] as const).map(s=><button key={s} aria-pressed={scale===s} className={scale===s?'active':''} onClick={()=>setScale(s)}>{s}</button>)}</nav><div className="footer-rule"/><p>Nothing disappears. It becomes part of the sky.</p></footer>
+  </main>
+  {panel&&<div className="drawer-shade" onClick={()=>setPanel(null)}><section className="planner-drawer" role="dialog" aria-modal="true" aria-label={panel} onClick={e=>e.stopPropagation()} onKeyDown={e=>e.key==='Escape'&&setPanel(null)}><button autoFocus className="drawer-close" aria-label="Close panel" onClick={()=>setPanel(null)}><X size={20}/></button>
+  {panel==='returning'&&<Recurring series={o.data.series} entries={o.data.entries} onAdd={o.addSeries} onUpdate={o.updateSeries} onDelete={o.deleteSeries}/>}
+  {panel==='gathering'&&<ToBuy items={o.data.buyItems} onAdd={o.addBuyItem} onUpdate={o.updateBuyItem} onDelete={o.deleteBuyItem}/>}
+  {panel==='constellations'&&<><div className="link-compose"><h2>draw a connection</h2><p>Choose moments that belong together—even across years.</p><input aria-label="Constellation name" placeholder="name this constellation…" value={linkName} onChange={e=>setLinkName(e.target.value)}/><div className="link-choices">{o.data.entries.map(e=><label key={e.id}><input type="checkbox" checked={linkIds.includes(e.id)} onChange={()=>setLinkIds(ids=>ids.includes(e.id)?ids.filter(id=>id!==e.id):[...ids,e.id])}/><span>{e.text}<small>{e.date??'in orbit'}</small></span></label>)}</div><button disabled={!linkName.trim()||linkIds.length<2} onClick={()=>{o.createConstellation(linkName.trim(),linkIds);setLinkIds([]);setLinkName('')}}>connect these moments</button></div><Sky data={o.data} onCreate={o.createConstellation} onUpdate={o.updateConstellation} onDelete={o.deleteConstellation} onOpenDay={d=>{setDate(d);setPanel(null)}} onRecall={o.recallOrbital}/></>}
+  </section></div>}
+  {evol&&<Evol data={o.data} target={evol} onClose={()=>setEvol(null)} onImport={o.importArchive} onApplyPlan={items=>{for(const item of items){const existing=entries.find(e=>e.text.toLowerCase()===item.text.toLowerCase());if(item.op==='remove'){if(existing)o.deleteEntry(existing.id)}else if(existing)o.updateEntry(existing.id,{done:item.op==='complete'});else o.addEntries(date,[item.text],undefined,item.op==='complete')}}}/>}
+ </div>
 }

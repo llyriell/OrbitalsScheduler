@@ -80,7 +80,7 @@ export function useOrbitals() {
     }
   }, [data]);
 
-  const addEntries = useCallback((date: string, texts: string[], seriesId?: string) => {
+  const addEntries = useCallback((date: string, texts: string[], seriesId?: string, done = false) => {
     let created: Entry[] = [];
     setData((d) => {
       const base = d.entries.filter((e) => e.date === date).length;
@@ -91,7 +91,7 @@ export function useOrbitals() {
           id: uid('e'),
           text: t,
           date,
-          done: false,
+          done,
           orbiting: false,
           seriesId,
           order: base + i,
@@ -141,7 +141,7 @@ export function useOrbitals() {
     setData((d) => ({
       ...d,
       entries: d.entries.map((e) =>
-        e.id === id ? { ...e, orbiting: true, date: undefined as unknown as string } : e,
+        e.id === id ? { ...e, orbiting: true } : e,
       ),
     }));
   }, []);
