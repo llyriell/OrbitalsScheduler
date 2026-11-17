@@ -225,3 +225,27 @@ test('unfinished recurring occurrences carry forward without duplicating later s
  const d=carryForward({...empty,entries:[recurring]},'2026-11-17');assert.equal(d.entries.length,3);assert.equal(d.entries[2].seriesId,'s');
  const later={...recurring,id:'s2',date:'2026-11-17'};const next=carryForward({...empty,entries:[recurring,later]},'2026-11-18');assert.equal(next.entries.filter(e=>e.date==='2026-11-17').length,1);assert.equal(next.entries.filter(e=>e.date==='2026-11-18').length,1);
 });
+
+const {completionChain,updateEntryState,cleanupTestSkies,moonOutline}=load('celestial');
+test('completion lights the carried ancestry without rewriting historical completion',()=>{
+ const base={id:'seed',text:'Sew the cuff',date:'2026-11-14',done:false,orbiting:false,order:0,createdAt:1};
+ const carried=carryForward({...empty,entries:[base,{...base,id:'unrelated'}]},'2026-11-17');
+ const final='seed__carry_2026-11-17';const done=updateEntryState(carried,final,{done:true});
+ assert.equal(completionChain(done.entries,final).map(e=>e.date).join(','),'2026-11-17,2026-11-16,2026-11-15,2026-11-14');
+ assert.equal(done.entries.find(e=>e.id==='seed').done,false);assert.equal(done.entries.find(e=>e.id==='seed').illuminatedBy,final);assert.equal(done.entries.find(e=>e.id==='unrelated').illuminatedBy,undefined);assert.equal(done.entries.find(e=>e.id===final).done,true);
+ assert.equal(carryForward(done,'2026-11-18').entries.filter(e=>(e.carryRoot??e.id)==='seed'&&e.date==='2026-11-18').length,0);
+});
+test('reopening a carried completion reverses only its own illumination',()=>{
+ const base={id:'s',text:'Task',date:'2026-11-16',done:false,orbiting:false,order:0,createdAt:1};const carried=carryForward({...empty,entries:[base]},'2026-11-17');const id='s__carry_2026-11-17';const done=updateEntryState(carried,id,{done:true});const opened=updateEntryState(done,id,{done:false});assert.equal(opened.entries[0].illuminatedBy,undefined);assert.equal(opened.entries[1].done,false);assert.equal(carryForward(opened,'2026-11-18').entries.length,3);
+ const noted=updateEntryState(done,id,{note:'keep the note'});assert.equal(noted.entries[0].illuminatedBy,id);assert.equal(noted.entries[1].note,'keep the note');
+});
+test('different recurring occurrences do not illuminate one another',()=>{
+ const base={text:'Water',seriesId:'series',done:false,orbiting:false,order:0,createdAt:1};const d={...empty,entries:[{...base,id:'old',date:'2026-11-01'},{...base,id:'new',date:'2026-11-15'},{...base,id:'carry',carryRoot:'new',date:'2026-11-17'}]};const next=updateEntryState(d,'carry',{done:true});assert.equal(next.entries[0].illuminatedBy,undefined);assert.equal(next.entries[1].illuminatedBy,'carry');
+});
+test('journal cleanup removes existing note-less tests once and preserves written notes',()=>{
+ const d={...empty,moods:{'2026-11-15':{icon:'clear'},'2026-11-16':{icon:'cloudy',text:'clouds passed'}},moodJournal:[{id:'a',date:'2026-11-15',icon:'clear'},{id:'b',date:'2026-11-15',icon:'clear',text:'   '},{id:'c',date:'2026-11-16',icon:'cloudy',text:'clouds passed',recordedAt:3}]};const clean=cleanupTestSkies(d);assert.equal(clean.moodJournal.length,1);assert.equal(clean.moodJournal[0].recordedAt,3);assert.equal(clean.moods['2026-11-15'],undefined);assert.equal(clean.moods['2026-11-16'].text,'clouds passed');const later={...clean,moodJournal:[...clean.moodJournal,{id:'later',date:'2026-11-17',icon:'clear'}]};assert.equal(cleanupTestSkies(later),later);
+ assert.equal(archive.parseArchive(archive.exportArchive(clean)).journalNotesCleanupV1,true);
+});
+test('moon outlines have phase-specific terminators and mirror when waning',()=>{
+ assert.equal(moonOutline(0).newMoon,true);assert.equal(moonOutline(.5).full,true);assert.match(moonOutline(.25).d,/L0,-5.5/);assert.match(moonOutline(.125).d,/A3\.889/);assert.equal(moonOutline(.125).mirror,1);assert.equal(moonOutline(.875).mirror,-1);assert.equal(moonOutline(.125).d,moonOutline(.875).d);for(let phase=0;phase<1;phase+=.01)assert.ok(!moonOutline(phase).d.includes('NaN'));
+});

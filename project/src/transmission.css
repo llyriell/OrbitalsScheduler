@@ -213,3 +213,20 @@
 @media(max-width:700px){.gathering-rail{width:27px;top:var(--command-edge,61px);bottom:calc(100dvh - var(--weather-edge,calc(100dvh - 180px)))}.rail-handle-halves{width:27px}.constellation-actions{gap:10px}.constellation-transmission .transmission-inner{max-height:calc(100dvh - 210px)}}
 
 @media(max-width:900px){.transmission-layout .sky-top>.sky-subject{display:flex;left:0;top:-15px;transform:none;font-size:8px;gap:7px}.sky-top .year-picker>button{font-size:8px}}
+
+/* A dark invitation, without a drawn boundary. */
+.void-drop-target{inset:0;border:0;border-radius:0;box-shadow:none;background:radial-gradient(ellipse at center,#010403f5 0%,#010403df 26%,#01040380 50%,transparent 82%);animation:none;color:#d0ded5}
+.constellation-threads{opacity:1}
+.constellation-threads .constellation-stroke{stroke:#bbd0c5;stroke-opacity:.35;stroke-width:.75;vector-effect:non-scaling-stroke;pointer-events:none;transition:stroke-opacity .75s ease,stroke .75s ease,stroke-width .75s ease}
+.constellation-threads.constellation-active .constellation-stroke{stroke:#edfff3;stroke-opacity:.98;stroke-width:1.15}
+.constellation-threads .constellation-hit:hover,.constellation-threads .constellation-hit:focus-visible{stroke:transparent!important;stroke-width:14px!important;outline:none}
+.constellation-threads .constellation-line-name{opacity:.55;transition:opacity .75s ease}
+.constellation-threads.constellation-active .constellation-line-name{opacity:.95}
+.moon-mark{pointer-events:none;fill:none;stroke:#d5e7df;stroke-width:.85;stroke-linecap:round;stroke-linejoin:round}
+.moon-mark .moon-dark-limb{stroke-opacity:.18}.moon-mark .moon-phase-outline{stroke-opacity:.9}.moon-mark .moon-new{stroke-opacity:.4}
+.day-moon.blood-moon .moon-mark{stroke:#803343}.day-moon:focus-visible .moon-mark{stroke:#fff}
+.orbital-node.awakening .node-core{animation:star-birth .7s ease-out both;animation-delay:var(--birth-delay)}
+.orbital-node.awakening .node-halo{animation:star-birth-halo .9s ease-out both;animation-delay:var(--birth-delay)}
+@keyframes star-birth{0%{opacity:.2;r:2}35%{opacity:1;r:5;filter:drop-shadow(0 0 5px #effff2)}100%{opacity:1;r:3.2;filter:drop-shadow(0 0 1px #effff2)}}
+@keyframes star-birth-halo{0%{opacity:.08;r:3}35%{opacity:1;r:11}100%{opacity:.9;r:6}}
+@media(prefers-reduced-motion:reduce){.orbital-node.awakening .node-core,.orbital-node.awakening .node-halo{animation:none}.constellation-threads .constellation-stroke,.constellation-threads .constellation-line-name{transition:none}}

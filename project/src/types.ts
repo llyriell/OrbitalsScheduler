@@ -9,6 +9,7 @@ export interface MoodLog extends Mood { id: string; date: string; recordedAt?: n
 
 export interface Entry {
   carryRoot?: string;
+  illuminatedBy?: string;
   kind?: 'task' | 'event';
   time?: string;
   id: string;
@@ -68,6 +69,7 @@ export interface Constellation {
 export interface FinancialRecord { id:string; text:string; kind:LedgerKind; amount:number; createdAt:number; }
 
 export interface AppData {
+  journalNotesCleanupV1?: boolean;
   dayMoons?: Record<string,'blood'>;
   starterConstellationsAdded?: boolean;
   dismissedCarryRoots?: string[];

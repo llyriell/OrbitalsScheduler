@@ -20,6 +20,7 @@ export function parseArchive(json: string): AppData {
     throw new Error('Archive is missing required sections');
   }
   return {
+    journalNotesCleanupV1:d.journalNotesCleanupV1,
     dayMoons:d.dayMoons??{},starterConstellationsAdded:d.starterConstellationsAdded,dismissedCarryRoots:d.dismissedCarryRoots??[],deletedEntries:d.deletedEntries??[],
     financialRecords: preservedFinances(d),
     entries: d.entries,

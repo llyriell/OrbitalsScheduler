@@ -1,4 +1,4 @@
-import { carryForward,seedConstellations } from './celestial';
+import { carryForward,seedConstellations,updateEntryState,cleanupTestSkies } from './celestial';
 import { preservedFinances } from './finance';
 import { moveBefore } from './commands';
 import { seriesOn } from './schedule';
@@ -57,6 +57,7 @@ function sanitize(raw: unknown): AppData {
   if (!raw || typeof raw !== 'object') return { ...emptyData };
   const d = raw as Partial<ArchiveData> & Partial<AppData>;
   return {
+    journalNotesCleanupV1:d.journalNotesCleanupV1,
     dayMoons:d.dayMoons??{},starterConstellationsAdded:d.starterConstellationsAdded,dismissedCarryRoots:d.dismissedCarryRoots??[],deletedEntries:d.deletedEntries??[],
     financialRecords: preservedFinances(d),
     entries: Array.isArray(d.entries) ? d.entries : [],
@@ -80,8 +81,8 @@ export function loadData(): AppData {
 }
 
 export function useOrbitals() {
-  const [data, setData] = useState<AppData>(() => carryForward(seedConstellations(loadData()),todayISO()));
-  useEffect(()=>{const tick=()=>setData(d=>carryForward(seedConstellations(d),todayISO()));tick();const timer=setInterval(tick,30000);return()=>clearInterval(timer)},[]);
+  const [data, setData] = useState<AppData>(() => carryForward(seedConstellations(cleanupTestSkies(loadData())),todayISO()));
+  useEffect(()=>{const tick=()=>setData(d=>carryForward(seedConstellations(cleanupTestSkies(d)),todayISO()));tick();const timer=setInterval(tick,30000);return()=>clearInterval(timer)},[]);
   useEffect(()=>{setData(d=>Array.isArray(d.financialRecords)?d:{...d,financialRecords:preservedFinances(d)})},[]);
 
   useEffect(() => {
@@ -110,7 +111,7 @@ export function useOrbitals() {
           createdAt: Date.now(),
         }));
       if (!created.length) return d;
-      return { ...d, entries: [...d.entries, ...created] };
+      return carryForward({ ...d, entries: [...d.entries, ...created] },todayISO());
     });
     return created;
   }, []);
@@ -120,12 +121,7 @@ export function useOrbitals() {
     const entry:Entry={id:uid('e'),text:text.trim(),date:todayISO(),orbiting:true,done:false,order:0,createdAt:Date.now()};
     setData(d=>({...d,entries:[...d.entries,entry]}));return entry.id;
   },[]);
-  const updateEntry = useCallback((id: string, patch: Partial<Entry>) => {
-    setData((d) => ({
-      ...d,
-      entries: d.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-    }));
-  }, []);
+  const updateEntry=useCallback((id:string,patch:Partial<Entry>)=>setData(d=>updateEntryState(d,id,patch)),[]);
 
   const deleteEntry=useCallback((id:string)=>{setData(d=>{const entry=d.entries.find(e=>e.id===id);if(!entry)return d;return {...d,entries:d.entries.filter(e=>e.id!==id),deletedEntries:[...(d.deletedEntries??[]),entry],dismissedCarryRoots:[...new Set([...(d.dismissedCarryRoots??[]),entry.carryRoot??entry.id])]}})},[]);
   const restoreEntry=useCallback((id:string)=>{setData(d=>{const entry=d.deletedEntries?.find(e=>e.id===id);if(!entry)return d;return {...d,entries:[...d.entries,entry],deletedEntries:d.deletedEntries?.filter(e=>e.id!==id),dismissedCarryRoots:d.dismissedCarryRoots?.filter(root=>root!==(entry.carryRoot??entry.id))}})},[]);
@@ -309,7 +305,7 @@ export function useOrbitals() {
   }, []);
 
   const importArchive = useCallback((incoming: AppData) => {
-    setData(sanitize(incoming));
+    setData(cleanupTestSkies(sanitize(incoming)));
   }, []);
 
   return {
