@@ -230,3 +230,25 @@
 @keyframes star-birth{0%{opacity:.2;r:2}35%{opacity:1;r:5;filter:drop-shadow(0 0 5px #effff2)}100%{opacity:1;r:3.2;filter:drop-shadow(0 0 1px #effff2)}}
 @keyframes star-birth-halo{0%{opacity:.08;r:3}35%{opacity:1;r:11}100%{opacity:.9;r:6}}
 @media(prefers-reduced-motion:reduce){.orbital-node.awakening .node-core,.orbital-node.awakening .node-halo{animation:none}.constellation-threads .constellation-stroke,.constellation-threads .constellation-line-name{transition:none}}
+
+/* The inside edge of the idle notebook dissolves into the eye. */
+@property --notebook-edge-opacity{syntax:"<number>";inherits:false;initial-value:.12}
+.transmission-layout .notebook{--notebook-edge-opacity:.12;-webkit-mask-image:linear-gradient(to right,#000 0%,#000 28%,rgb(0 0 0 / var(--notebook-edge-opacity)) 100%);mask-image:linear-gradient(to right,#000 0%,#000 28%,rgb(0 0 0 / var(--notebook-edge-opacity)) 100%);transition:--notebook-edge-opacity .65s ease,opacity .45s ease,background .45s ease,backdrop-filter .45s ease}
+.transmission-layout .notebook:hover,.transmission-layout .notebook:focus-within{--notebook-edge-opacity:1}
+/* Both scheduling forms use the same transmission frame and typography. */
+.transmission-box.feature-transmission{width:min(640px,calc(100vw - 60px));z-index:65;max-height:calc(100dvh - 125px)}
+.transmission-box.feature-transmission .transmission-inner{padding:22px 25px;max-height:calc(100dvh - 125px);background:#c9dec610;backdrop-filter:blur(6px)}
+.transmission-box.feature-transmission .feature-page{padding:15px 15px 10px}
+.transmission-box.feature-transmission .feature-page h1{font:normal 23px Georgia,serif;letter-spacing:-.02em}
+.transmission-box.feature-transmission .quiet-form{margin:18px 0;gap:12px;padding:15px 0}
+.transmission-box.feature-transmission .quiet-form input,.transmission-box.feature-transmission .quiet-form select,.transmission-box.feature-transmission .quiet-form textarea{font:12px/1.6 ui-monospace,Consolas,monospace}
+.static-toggle{white-space:nowrap}.static-toggle[aria-pressed=true]{color:#ebfff1}
+.constellation-threads.constellation-active .constellation-stroke{stroke:#c8dcd1;stroke-opacity:.48;stroke-width:.75}
+.constellation-emphasis{fill:none;stroke-opacity:0;stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none;transition:stroke-opacity .8s ease}
+.constellation-active .constellation-emphasis{stroke-opacity:.9}
+.constellation-soft-edge{stroke-width:2.7;filter:blur(.65px)}
+.constellation-active .constellation-soft-edge{stroke-opacity:.2}
+.journal-entry{cursor:grab}.journal-entry.is-dragging{opacity:.25}.journal-grip{font:12px ui-monospace,Consolas,monospace;color:#95ac9d;opacity:.35;flex-shrink:0}.journal-entry:hover .journal-grip,.journal-entry:focus-within .journal-grip{opacity:.8}.journal-delete{margin-left:auto;align-self:flex-start;opacity:.4;padding:4px 7px!important;font-size:15px!important}.journal-delete:hover,.journal-delete:focus-visible{opacity:1}.journal-records .journal-entry>div{flex:1;min-width:0}
+@media(hover:none){.transmission-layout .notebook{--notebook-edge-opacity:1}}
+@media(max-width:700px){.transmission-box.feature-transmission{width:calc(100vw - 32px)}.transmission-box.feature-transmission .transmission-inner{padding:20px 12px}.transmission-layout .sky-top-actions{gap:10px}.transmission-layout .sky-top-actions .static-toggle{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.transmission-layout .notebook,.constellation-emphasis{transition:none}}

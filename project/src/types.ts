@@ -68,7 +68,11 @@ export interface Constellation {
 
 export interface FinancialRecord { id:string; text:string; kind:LedgerKind; amount:number; createdAt:number; }
 
+export interface DiscardAction {kind:'task'|'journal';id:string}
+
 export interface AppData {
+  deletedMoodJournal?: MoodLog[];
+  discardHistory?: DiscardAction[];
   journalNotesCleanupV1?: boolean;
   dayMoons?: Record<string,'blood'>;
   starterConstellationsAdded?: boolean;

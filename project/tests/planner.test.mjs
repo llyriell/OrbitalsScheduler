@@ -249,3 +249,23 @@ test('journal cleanup removes existing note-less tests once and preserves writte
 test('moon outlines have phase-specific terminators and mirror when waning',()=>{
  assert.equal(moonOutline(0).newMoon,true);assert.equal(moonOutline(.5).full,true);assert.match(moonOutline(.25).d,/L0,-5.5/);assert.match(moonOutline(.125).d,/A3\.889/);assert.equal(moonOutline(.125).mirror,1);assert.equal(moonOutline(.875).mirror,-1);assert.equal(moonOutline(.125).d,moonOutline(.875).d);for(let phase=0;phase<1;phase+=.01)assert.ok(!moonOutline(phase).d.includes('NaN'));
 });
+
+test('visit accepts numeric month/day and validates leap years without rolling dates',()=>{
+ const base=new Date(2026,10,17,12);assert.equal(resolveDay('11 21',base),'2026-11-21');assert.equal(resolveDay('01 05',base),'2026-01-05');assert.equal(resolveDay('2 29',base),null);assert.equal(resolveDay('2 29',new Date(2028,0,1)),'2028-02-29');for(const value of ['0 21','13 1','11 31','4 31','1 0','99 99'])assert.equal(resolveDay(value,base),null);assert.equal(parseCommand('visit [11 21]').date,resolveDay('11 21'));
+});
+test('command completion returns the selected command, not its hint or brackets',()=>{
+ const {commandSuggestions,completedCommand}=load('commands');assert.equal(completedCommand(commandSuggestions('vi'),0),'visit ');assert.equal(completedCommand(commandSuggestions('/con'),0),'connect ');assert.equal(completedCommand(commandSuggestions('/con'),1),'constellation ');assert.equal(completedCommand(commandSuggestions('blood'),0),'blood moon ');assert.equal(completedCommand(commandSuggestions('visit'),0),null);assert.equal(completedCommand(commandSuggestions('visit 11 21'),0),null);assert.equal(completedCommand(commandSuggestions('today'),0),null);
+ assert.equal(parseCommand('return').kind,'return');assert.equal(parseCommand('return to static').kind,'static');assert.equal(parseCommand('static').kind,'static');
+});
+const {discardJournal,restoreJournal,restoreTask,latestDiscard,undoDiscard}=load('discard');
+test('journal deletion updates the day mood and undo preserves the exact note and timestamp',()=>{
+ const first={id:'m1',date:'2026-11-17',icon:'clear',text:'Morning',recordedAt:1};const last={id:'m2',date:first.date,icon:'cloudy',text:'Evening',recordedAt:2};const d={...empty,moodJournal:[first,last],moods:{[first.date]:{icon:last.icon,text:last.text}}};const removed=discardJournal(d,'m2');assert.equal(removed.moodJournal.length,1);assert.equal(removed.moods[first.date].text,'Morning');assert.equal(removed.deletedMoodJournal[0].recordedAt,2);assert.equal(latestDiscard(removed).kind,'journal');const restored=undoDiscard(removed);assert.equal(restored.moodJournal.length,2);assert.equal(restored.moods[first.date].text,'Evening');assert.equal(restored.deletedMoodJournal.length,0);assert.equal(latestDiscard(restored),undefined);assert.equal(discardJournal(d,'missing'),d);
+ const none=discardJournal(discardJournal(d,'m2'),'m1');assert.equal(none.moods[first.date],undefined);assert.equal(restoreJournal(none,'m2').moods[first.date].text,'Evening');
+});
+test('Undo follows journal and task deletions in order and restores legacy discarded tasks',()=>{
+ const task={id:'e1',text:'Task',date:'2026-11-17',done:false,orbiting:false,order:0,createdAt:1};const log={id:'m1',date:task.date,icon:'clear',text:'keep me',recordedAt:9};const legacy={...empty,deletedEntries:[task],dismissedCarryRoots:['e1'],moodJournal:[log]};const journalDeleted=discardJournal(legacy,log.id);assert.equal(latestDiscard(journalDeleted).kind,'journal');const journalRestored=undoDiscard(journalDeleted);assert.equal(latestDiscard(journalRestored).kind,'task');const allRestored=undoDiscard(journalRestored);assert.equal(allRestored.entries[0].id,'e1');assert.equal(allRestored.dismissedCarryRoots.length,0);assert.equal(undoDiscard(allRestored),allRestored);
+ const parsed=archive.parseArchive(archive.exportArchive(journalDeleted));assert.equal(parsed.deletedMoodJournal[0].text,'keep me');assert.equal(parsed.discardHistory[0].kind,'journal');
+});
+test('mini orbital drift is slower than the prior speed and remains continuous when released',()=>{
+ const {MINI_ORBIT_SECONDS,LOOSE_ORBIT_SECONDS}=load('celestial');assert.ok(MINI_ORBIT_SECONDS>120);assert.ok(LOOSE_ORBIT_SECONDS>=180);const root={x:3,y:4,a:0};const angleAt=t=>t*2*Math.PI/MINI_ORBIT_SECONDS;const a=planetPoint(root,20,0,angleAt(1),1),b=planetPoint(root,20,0,angleAt(2),1);assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>0);const held=planetPoint(root,20,0,angleAt(100),0);assert.equal(held.x,23);assert.equal(held.y,4);
+});

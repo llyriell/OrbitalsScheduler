@@ -1,4 +1,5 @@
 import { carryForward,seedConstellations,updateEntryState,cleanupTestSkies } from './celestial';
+import {discardJournal,restoreTask,latestDiscard,undoDiscard as undoDiscardState} from './discard';
 import { preservedFinances } from './finance';
 import { moveBefore } from './commands';
 import { seriesOn } from './schedule';
@@ -57,6 +58,7 @@ function sanitize(raw: unknown): AppData {
   if (!raw || typeof raw !== 'object') return { ...emptyData };
   const d = raw as Partial<ArchiveData> & Partial<AppData>;
   return {
+    deletedMoodJournal:d.deletedMoodJournal??[],discardHistory:d.discardHistory??[],
     journalNotesCleanupV1:d.journalNotesCleanupV1,
     dayMoons:d.dayMoons??{},starterConstellationsAdded:d.starterConstellationsAdded,dismissedCarryRoots:d.dismissedCarryRoots??[],deletedEntries:d.deletedEntries??[],
     financialRecords: preservedFinances(d),
@@ -123,8 +125,10 @@ export function useOrbitals() {
   },[]);
   const updateEntry=useCallback((id:string,patch:Partial<Entry>)=>setData(d=>updateEntryState(d,id,patch)),[]);
 
-  const deleteEntry=useCallback((id:string)=>{setData(d=>{const entry=d.entries.find(e=>e.id===id);if(!entry)return d;return {...d,entries:d.entries.filter(e=>e.id!==id),deletedEntries:[...(d.deletedEntries??[]),entry],dismissedCarryRoots:[...new Set([...(d.dismissedCarryRoots??[]),entry.carryRoot??entry.id])]}})},[]);
-  const restoreEntry=useCallback((id:string)=>{setData(d=>{const entry=d.deletedEntries?.find(e=>e.id===id);if(!entry)return d;return {...d,entries:[...d.entries,entry],deletedEntries:d.deletedEntries?.filter(e=>e.id!==id),dismissedCarryRoots:d.dismissedCarryRoots?.filter(root=>root!==(entry.carryRoot??entry.id))}})},[]);
+  const deleteEntry=useCallback((id:string)=>{setData(d=>{const entry=d.entries.find(e=>e.id===id);if(!entry)return d;return {...d,entries:d.entries.filter(e=>e.id!==id),deletedEntries:[...(d.deletedEntries??[]),entry],discardHistory:[...(d.discardHistory??[]),{kind:'task',id}],dismissedCarryRoots:[...new Set([...(d.dismissedCarryRoots??[]),entry.carryRoot??entry.id])]}})},[]);
+  const restoreEntry=useCallback((id:string)=>setData(d=>restoreTask(d,id)),[]);
+  const deleteMoodLog=useCallback((id:string)=>setData(d=>discardJournal(d,id)),[]);
+  const undoDiscard=useCallback(()=>setData(undoDiscardState),[]);
   const bloodMoon=useCallback((date:string)=>setData(d=>({...d,dayMoons:{...d.dayMoons,[date]:'blood'}})),[]);
   const moveEntry = useCallback((id: string, toDate: string) => {
     setData((d) => {
@@ -313,7 +317,7 @@ export function useOrbitals() {
     addEntries,
     addOrbit,
     updateEntry,
-    deleteEntry,restoreEntry,bloodMoon,
+    deleteEntry,restoreEntry,bloodMoon,deleteMoodLog,undoDiscard,canUndoDiscard:!!latestDiscard(data),
     moveEntry,
     letOrbit,
     recallOrbital,
