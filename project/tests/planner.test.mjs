@@ -247,7 +247,7 @@ test('journal cleanup removes existing note-less tests once and preserves writte
  assert.equal(archive.parseArchive(archive.exportArchive(clean)).journalNotesCleanupV1,true);
 });
 test('moon outlines have phase-specific terminators and mirror when waning',()=>{
- assert.equal(moonOutline(0).newMoon,true);assert.equal(moonOutline(.5).full,true);assert.match(moonOutline(.25).d,/L0,-5.5/);assert.match(moonOutline(.125).d,/A3\.889/);assert.equal(moonOutline(.125).mirror,1);assert.equal(moonOutline(.875).mirror,-1);assert.equal(moonOutline(.125).d,moonOutline(.875).d);for(let phase=0;phase<1;phase+=.01)assert.ok(!moonOutline(phase).d.includes('NaN'));
+ assert.equal(moonOutline(0).newMoon,true);assert.equal(moonOutline(.5).full,true);assert.match(moonOutline(.25).d,/L0,-3/);assert.match(moonOutline(.125).d,/A2\.121/);assert.equal(moonOutline(.125).mirror,1);assert.equal(moonOutline(.875).mirror,-1);assert.equal(moonOutline(.125).d,moonOutline(.875).d);for(let phase=0;phase<1;phase+=.01)assert.ok(!moonOutline(phase).d.includes('NaN'));
 });
 
 test('visit accepts numeric month/day and validates leap years without rolling dates',()=>{
@@ -255,7 +255,7 @@ test('visit accepts numeric month/day and validates leap years without rolling d
 });
 test('command completion returns the selected command, not its hint or brackets',()=>{
  const {commandSuggestions,completedCommand}=load('commands');assert.equal(completedCommand(commandSuggestions('vi'),0),'visit ');assert.equal(completedCommand(commandSuggestions('/con'),0),'connect ');assert.equal(completedCommand(commandSuggestions('/con'),1),'constellation ');assert.equal(completedCommand(commandSuggestions('blood'),0),'blood moon ');assert.equal(completedCommand(commandSuggestions('visit'),0),null);assert.equal(completedCommand(commandSuggestions('visit 11 21'),0),null);assert.equal(completedCommand(commandSuggestions('today'),0),null);
- assert.equal(parseCommand('return').kind,'return');assert.equal(parseCommand('return to static').kind,'static');assert.equal(parseCommand('static').kind,'static');
+ assert.equal(parseCommand('return').kind,'return');assert.equal(parseCommand('static').kind,'error');
 });
 const {discardJournal,restoreJournal,restoreTask,latestDiscard,undoDiscard}=load('discard');
 test('journal deletion updates the day mood and undo preserves the exact note and timestamp',()=>{

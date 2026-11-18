@@ -25,7 +25,7 @@ export function cleanupTestSkies(data:AppData):AppData{
  for(const log of moodJournal.slice().sort((a,b)=>(a.recordedAt??0)-(b.recordedAt??0)))moods[log.date]={icon:log.icon,text:log.text};
  return {...data,journalNotesCleanupV1:true,moodJournal,moods};
 }
-export function moonOutline(phase:number,r=5.5){const f=((phase%1)+1)%1;const waxing=f<=.5;const t=waxing?f:1-f;const c=Math.cos(t*Math.PI*2);const rx=Math.abs(c)*r;const terminator=rx<.015?'L0,'+(-r):'A'+rx+','+r+' 0 0 '+(c>=0?'0':'1')+' 0,'+(-r);return {d:'M0,'+(-r)+' A'+r+','+r+' 0 0 1 0,'+r+' '+terminator+' Z',mirror:waxing?1:-1,full:Math.abs(f-.5)<.008,newMoon:f<.008||f>.992}}
+export function moonOutline(phase:number,r=3){const f=((phase%1)+1)%1;const waxing=f<=.5;const t=waxing?f:1-f;const c=Math.cos(t*Math.PI*2);const rx=Math.abs(c)*r;const terminator=rx<.015?'L0,'+(-r):'A'+rx+','+r+' 0 0 '+(c>=0?'0':'1')+' 0,'+(-r);return {d:'M0,'+(-r)+' A'+r+','+r+' 0 0 1 0,'+r+' '+terminator+' Z',mirror:waxing?1:-1,full:Math.abs(f-.5)<.008,newMoon:f<.008||f>.992}}
 
 export const MINI_ORBIT_SECONDS=360;
 export const LOOSE_ORBIT_SECONDS=360;
