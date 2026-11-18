@@ -269,3 +269,5 @@ test('Undo follows journal and task deletions in order and restores legacy disca
 test('mini orbital drift is slower than the prior speed and remains continuous when released',()=>{
  const {MINI_ORBIT_SECONDS,LOOSE_ORBIT_SECONDS}=load('celestial');assert.ok(MINI_ORBIT_SECONDS>120);assert.ok(LOOSE_ORBIT_SECONDS>=180);const root={x:3,y:4,a:0};const angleAt=t=>t*2*Math.PI/MINI_ORBIT_SECONDS;const a=planetPoint(root,20,0,angleAt(1),1),b=planetPoint(root,20,0,angleAt(2),1);assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>0);const held=planetPoint(root,20,0,angleAt(100),0);assert.equal(held.x,23);assert.equal(held.y,4);
 });
+
+test('rewind is a command and Enter completion expands its prefix',()=>{const {commandSuggestions,completedCommand}=load('commands');assert.equal(parseCommand('rewind').kind,'rewind');assert.equal(parseCommand('/rewind').kind,'rewind');assert.equal(completedCommand(commandSuggestions('rew'),0),'rewind ');assert.equal(parseCommand('return').kind,'return');});

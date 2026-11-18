@@ -207,7 +207,7 @@
 .constellation-lenses{display:flex;gap:12px;align-items:center;margin:16px 0}.constellation-lenses label{font-size:9px;display:flex;gap:8px;align-items:center}.constellation-lenses input{width:70px}.constellation-transmission input,.constellation-transmission select{background:#0e1c184d;color:#c3d9cb;border:1px solid #b5cbbb26;font:11px ui-monospace,Consolas,monospace;padding:8px;max-width:100%}
 .constellation-actions{display:flex;flex-wrap:wrap;gap:15px;margin:15px 0;font-size:10px}.constellation-group h3{font:10px ui-monospace,Consolas,monospace;color:#a5bdae;letter-spacing:.12em;margin-top:24px}.constellation-edit>label{display:flex;flex-direction:column;gap:10px;font-size:10px;margin:20px 0}.constellation-member-options{max-height:35vh;overflow:auto}.constellation-member-options label{display:flex;gap:12px;align-items:center;border-bottom:1px solid #bdcebf20;padding:12px 0;font:11px/1.7 ui-monospace,Consolas,monospace}.constellation-empty,.constellation-delete{font:11px/1.8 ui-monospace,Consolas,monospace;color:#a9c4b4}.constellation-delete{padding:15px;background:#662d391c;border:1px solid #95636b33}.constellation-delete button{margin:7px 18px 0 0}.constellation-transmission .transmission-inner{max-height:calc(100dvh - 170px)}
 .void-drop-target{position:absolute;inset:30% 27%;border:1px dashed #d1e6d350;border-radius:50%;z-index:30;pointer-events:none;display:grid;place-items:center;background:radial-gradient(ellipse,#030806a0,transparent 70%);font:10px ui-monospace,Consolas,monospace;color:#b9cbbf;letter-spacing:.14em;animation:void-invite 1.5s ease-in-out infinite alternate}
-.void-dissolve{position:fixed;z-index:90;pointer-events:none;font:14px ui-monospace,Consolas,monospace;color:#d4e6d8;animation:void-fade .85s both}.void-dissolve span{display:inline-block;white-space:pre;animation:void-bit .8s ease-out both;animation-delay:calc(var(--i)*3ms)}.void-undo{position:fixed;bottom:125px;left:50%;transform:translateX(-50%);z-index:55;font:10px ui-monospace,Consolas,monospace!important;padding:10px 17px!important;background:#14251ddd!important;border:1px solid #bfd7c72d!important}
+.void-dissolve{position:fixed;z-index:90;pointer-events:none;font:14px ui-monospace,Consolas,monospace;color:#d4e6d8;animation:void-fade .85s both}.void-dissolve span{display:inline-block;white-space:pre;animation:void-bit .8s ease-out both;animation-delay:calc(var(--i)*3ms)}
 @keyframes void-invite{to{box-shadow:0 0 50px #c3d5c516;opacity:.5}}@keyframes void-fade{99%{opacity:1}100%{opacity:0}}@keyframes void-bit{to{transform:translate(var(--dx),var(--dy)) rotate(90deg) scale(.15);opacity:0;filter:blur(2px)}}
 @media(prefers-reduced-motion:reduce){.void-drop-target,.void-dissolve,.void-dissolve span{animation:none}}
 @media(max-width:700px){.gathering-rail{width:27px;top:var(--command-edge,61px);bottom:calc(100dvh - var(--weather-edge,calc(100dvh - 180px)))}.rail-handle-halves{width:27px}.constellation-actions{gap:10px}.constellation-transmission .transmission-inner{max-height:calc(100dvh - 210px)}}
@@ -222,9 +222,9 @@
 .constellation-threads .constellation-hit:hover,.constellation-threads .constellation-hit:focus-visible{stroke:transparent!important;stroke-width:14px!important;outline:none}
 .constellation-threads .constellation-line-name{opacity:.55;transition:opacity .75s ease}
 .constellation-threads.constellation-active .constellation-line-name{opacity:.95}
-.moon-mark{pointer-events:none;fill:none;stroke:#d5e7df;stroke-width:.85;stroke-linecap:round;stroke-linejoin:round}
-.moon-mark .moon-dark-limb{stroke-opacity:.18}.moon-mark .moon-phase-outline{stroke-opacity:.9}.moon-mark .moon-new{stroke-opacity:.4}
-.day-moon.blood-moon .moon-mark{stroke:#803343}.day-moon:focus-visible .moon-mark{stroke:#fff}
+.moon-mark{pointer-events:none;fill:none;stroke:#d5e7df;color:#d5e7df;stroke-width:.85;stroke-linecap:round;stroke-linejoin:round}
+.moon-mark .moon-dark-limb{stroke-opacity:.48}.moon-mark .moon-phase-outline{stroke-opacity:.95;fill:currentColor;fill-opacity:.08}.moon-mark .moon-new{stroke-opacity:.4}
+.day-moon.blood-moon .moon-mark{stroke:#9c4354;color:#9c4354}.day-moon:focus-visible .moon-mark{stroke:#fff}
 .orbital-node.awakening .node-core{animation:star-birth .7s ease-out both;animation-delay:var(--birth-delay)}
 .orbital-node.awakening .node-halo{animation:star-birth-halo .9s ease-out both;animation-delay:var(--birth-delay)}
 @keyframes star-birth{0%{opacity:.2;r:2}35%{opacity:1;r:5;filter:drop-shadow(0 0 5px #effff2)}100%{opacity:1;r:3.2;filter:drop-shadow(0 0 1px #effff2)}}
@@ -243,12 +243,14 @@
 .transmission-box.feature-transmission .quiet-form{margin:18px 0;gap:12px;padding:15px 0}
 .transmission-box.feature-transmission .quiet-form input,.transmission-box.feature-transmission .quiet-form select,.transmission-box.feature-transmission .quiet-form textarea{font:12px/1.6 ui-monospace,Consolas,monospace}
 .static-toggle{white-space:nowrap}.static-toggle[aria-pressed=true]{color:#ebfff1}
-.constellation-threads.constellation-active .constellation-stroke{stroke:#c8dcd1;stroke-opacity:.48;stroke-width:.75}
+.constellation-threads.constellation-active .constellation-stroke{stroke:#c8dcd1;stroke-opacity:.35;stroke-width:.75}
 .constellation-emphasis{fill:none;stroke-opacity:0;stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none;transition:stroke-opacity .8s ease}
-.constellation-active .constellation-emphasis{stroke-opacity:.9}
-.constellation-soft-edge{stroke-width:2.7;filter:blur(.65px)}
-.constellation-active .constellation-soft-edge{stroke-opacity:.2}
+.constellation-active .constellation-emphasis{stroke-opacity:.38}
+.constellation-soft-edge{stroke-width:3.5}
+.constellation-active .constellation-soft-edge{stroke-opacity:.22}
 .journal-entry{cursor:grab}.journal-entry.is-dragging{opacity:.25}.journal-grip{font:12px ui-monospace,Consolas,monospace;color:#95ac9d;opacity:.35;flex-shrink:0}.journal-entry:hover .journal-grip,.journal-entry:focus-within .journal-grip{opacity:.8}.journal-delete{margin-left:auto;align-self:flex-start;opacity:.4;padding:4px 7px!important;font-size:15px!important}.journal-delete:hover,.journal-delete:focus-visible{opacity:1}.journal-records .journal-entry>div{flex:1;min-width:0}
 @media(hover:none){.transmission-layout .notebook{--notebook-edge-opacity:1}}
 @media(max-width:700px){.transmission-box.feature-transmission{width:calc(100vw - 32px)}.transmission-box.feature-transmission .transmission-inner{padding:20px 12px}.transmission-layout .sky-top-actions{gap:10px}.transmission-layout .sky-top-actions .static-toggle{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.transmission-layout .notebook,.constellation-emphasis{transition:none}}
+
+.journal-grip{cursor:grab!important;user-select:none;touch-action:none;padding:4px!important;align-self:flex-start;color:#a9c4b4!important;opacity:.65}.journal-grip:active{cursor:grabbing!important}
