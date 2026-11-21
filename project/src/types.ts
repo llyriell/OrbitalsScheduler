@@ -5,7 +5,13 @@ export interface Mood {
   text?: string;
 }
 
+export interface MoodLog extends Mood { id: string; date: string; recordedAt?: number; }
+
 export interface Entry {
+  carryRoot?: string;
+  illuminatedBy?: string;
+  kind?: 'task' | 'event';
+  time?: string;
   id: string;
   text: string;
   date: string; // ISO yyyy-mm-dd; undefined when orbiting
@@ -26,7 +32,7 @@ export interface Trace {
   seriesId?: string;
 }
 
-export type RecurrenceRule = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type RecurrenceRule = 'daily' | 'every_other_day' | 'weekdays' | 'weekly' | 'monthly' | 'yearly';
 
 export interface RecurringSeries {
   id: string;
@@ -34,6 +40,7 @@ export interface RecurringSeries {
   rule: RecurrenceRule;
   anchorDate: string;
   paused: boolean;
+  weekdays?: number[];
   skippedDates?: string[];
   createdAt: number;
 }
@@ -59,13 +66,26 @@ export interface Constellation {
   createdAt: number;
 }
 
+export interface FinancialRecord { id:string; text:string; kind:LedgerKind; amount:number; createdAt:number; }
+
+export interface DiscardAction {kind:'task'|'journal';id:string}
+
 export interface AppData {
+  deletedMoodJournal?: MoodLog[];
+  discardHistory?: DiscardAction[];
+  journalNotesCleanupV1?: boolean;
+  dayMoons?: Record<string,'blood'>;
+  starterConstellationsAdded?: boolean;
+  dismissedCarryRoots?: string[];
+  deletedEntries?: Entry[];
+  financialRecords: FinancialRecord[];
   entries: Entry[];
   traces: Trace[];
   series: RecurringSeries[];
   buyItems: BuyItem[];
   constellations: Constellation[];
   moods: Record<string, Mood>;
+  moodJournal: MoodLog[];
 }
 
 export interface ArchiveData extends AppData {

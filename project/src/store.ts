@@ -1,3 +1,9 @@
+import { carryForward,seedConstellations,updateEntryState,cleanupTestSkies } from './celestial';
+import {discardJournal,restoreTask,latestDiscard,undoDiscard as undoDiscardState} from './discard';
+import { preservedFinances } from './finance';
+import { moveBefore } from './commands';
+import { seriesOn } from './schedule';
+export { recursOn } from './schedule';
 import { useCallback, useEffect, useState } from 'react';
 import type {
   ArchiveData,
@@ -5,9 +11,9 @@ import type {
   BuyItem,
   Constellation,
   Entry,
+  FinancialRecord,
   LedgerKind,
   Mood,
-  RecurrenceRule,
   RecurringSeries,
   Trace,
 } from './types';
@@ -38,24 +44,31 @@ export function addDaysISO(iso: string, days: number): string {
 }
 
 const emptyData: AppData = {
+  financialRecords: [],
   entries: [],
   traces: [],
   series: [],
   buyItems: [],
   constellations: [],
   moods: {},
+  moodJournal: [],
 };
 
 function sanitize(raw: unknown): AppData {
   if (!raw || typeof raw !== 'object') return { ...emptyData };
   const d = raw as Partial<ArchiveData> & Partial<AppData>;
   return {
+    deletedMoodJournal:d.deletedMoodJournal??[],discardHistory:d.discardHistory??[],
+    journalNotesCleanupV1:d.journalNotesCleanupV1,
+    dayMoons:d.dayMoons??{},starterConstellationsAdded:d.starterConstellationsAdded,dismissedCarryRoots:d.dismissedCarryRoots??[],deletedEntries:d.deletedEntries??[],
+    financialRecords: preservedFinances(d),
     entries: Array.isArray(d.entries) ? d.entries : [],
     traces: Array.isArray(d.traces) ? d.traces : [],
     series: Array.isArray(d.series) ? d.series : [],
-    buyItems: Array.isArray(d.buyItems) ? d.buyItems : [],
+    buyItems: Array.isArray(d.buyItems) ? d.buyItems.map(b=>b.bought&&!b.boughtAt?{...b,boughtAt:Date.now()}:b) : [],
     constellations: Array.isArray(d.constellations) ? d.constellations : [],
     moods: d.moods && typeof d.moods === 'object' ? d.moods : {},
+    moodJournal: Array.isArray(d.moodJournal) ? d.moodJournal : Object.entries(d.moods??{}).map(([date,mood])=>({...mood,id:'legacy_'+date,date})),
   };
 }
 
@@ -70,7 +83,9 @@ export function loadData(): AppData {
 }
 
 export function useOrbitals() {
-  const [data, setData] = useState<AppData>(() => loadData());
+  const [data, setData] = useState<AppData>(() => carryForward(seedConstellations(cleanupTestSkies(loadData())),todayISO()));
+  useEffect(()=>{const tick=()=>setData(d=>carryForward(seedConstellations(cleanupTestSkies(d)),todayISO()));tick();const timer=setInterval(tick,30000);return()=>clearInterval(timer)},[]);
+  useEffect(()=>{setData(d=>Array.isArray(d.financialRecords)?d:{...d,financialRecords:preservedFinances(d)})},[]);
 
   useEffect(() => {
     try {
@@ -80,7 +95,7 @@ export function useOrbitals() {
     }
   }, [data]);
 
-  const addEntries = useCallback((date: string, texts: string[], seriesId?: string) => {
+  const addEntries = useCallback((date: string, texts: string[], seriesId?: string, done = false) => {
     let created: Entry[] = [];
     setData((d) => {
       const base = d.entries.filter((e) => e.date === date).length;
@@ -91,32 +106,30 @@ export function useOrbitals() {
           id: uid('e'),
           text: t,
           date,
-          done: false,
+          done,
           orbiting: false,
           seriesId,
           order: base + i,
           createdAt: Date.now(),
         }));
       if (!created.length) return d;
-      return { ...d, entries: [...d.entries, ...created] };
+      return carryForward({ ...d, entries: [...d.entries, ...created] },todayISO());
     });
     return created;
   }, []);
 
-  const updateEntry = useCallback((id: string, patch: Partial<Entry>) => {
-    setData((d) => ({
-      ...d,
-      entries: d.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-    }));
-  }, []);
+  const addOrbit = useCallback((text:string) => {
+    if(!text.trim())return;
+    const entry:Entry={id:uid('e'),text:text.trim(),date:todayISO(),orbiting:true,done:false,order:0,createdAt:Date.now()};
+    setData(d=>({...d,entries:[...d.entries,entry]}));return entry.id;
+  },[]);
+  const updateEntry=useCallback((id:string,patch:Partial<Entry>)=>setData(d=>updateEntryState(d,id,patch)),[]);
 
-  const deleteEntry = useCallback((id: string) => {
-    setData((d) => ({
-      ...d,
-      entries: d.entries.filter((e) => e.id !== id),
-    }));
-  }, []);
-
+  const deleteEntry=useCallback((id:string)=>{setData(d=>{const entry=d.entries.find(e=>e.id===id);if(!entry)return d;return {...d,entries:d.entries.filter(e=>e.id!==id),deletedEntries:[...(d.deletedEntries??[]),entry],discardHistory:[...(d.discardHistory??[]),{kind:'task',id}],dismissedCarryRoots:[...new Set([...(d.dismissedCarryRoots??[]),entry.carryRoot??entry.id])]}})},[]);
+  const restoreEntry=useCallback((id:string)=>setData(d=>restoreTask(d,id)),[]);
+  const deleteMoodLog=useCallback((id:string)=>setData(d=>discardJournal(d,id)),[]);
+  const undoDiscard=useCallback(()=>setData(undoDiscardState),[]);
+  const bloodMoon=useCallback((date:string)=>setData(d=>({...d,dayMoons:{...d.dayMoons,[date]:'blood'}})),[]);
   const moveEntry = useCallback((id: string, toDate: string) => {
     setData((d) => {
       const entry = d.entries.find((e) => e.id === id);
@@ -141,7 +154,7 @@ export function useOrbitals() {
     setData((d) => ({
       ...d,
       entries: d.entries.map((e) =>
-        e.id === id ? { ...e, orbiting: true, date: undefined as unknown as string } : e,
+        e.id === id ? { ...e, orbiting: true } : e,
       ),
     }));
   }, []);
@@ -160,11 +173,7 @@ export function useOrbitals() {
       const inDay = d.entries
         .filter((e) => e.date === date)
         .sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
-      const moving = inDay.find((e) => e.id === id);
-      if (!moving) return d;
-      const rest = inDay.filter((e) => e.id !== id);
-      const idx = targetId ? rest.findIndex((e) => e.id === targetId) : rest.length;
-      const next = [...rest.slice(0, idx), moving, ...rest.slice(idx)];
+      const next = moveBefore(inDay,id,targetId);
       const orders = new Map(next.map((e, i) => [e.id, i]));
       return {
         ...d,
@@ -184,6 +193,14 @@ export function useOrbitals() {
     });
   }, []);
 
+  const addMood = useCallback((date: string, mood: Mood, recordedAt = Date.now()) => {
+    const log = {...mood,id:uid('m'),date,recordedAt};
+    setData(d=>({...d,moods:{...d.moods,[date]:mood},moodJournal:[...d.moodJournal,log]}));
+  },[]);
+  const addEvent = useCallback((date:string,text:string,time?:string,note?:string)=>{
+    const entry:Entry={id:uid('e'),text:text.trim(),date,time,note,kind:'event',done:false,orbiting:false,order:0,createdAt:Date.now()};
+    if(entry.text&&date)setData(d=>({...d,entries:[...d.entries,entry]}));
+  },[]);
   // Recurring series
   const addSeries = useCallback((series: Omit<RecurringSeries, 'id' | 'createdAt'>) => {
     const s: RecurringSeries = { ...series, id: uid('s'), createdAt: Date.now() };
@@ -202,7 +219,7 @@ export function useOrbitals() {
     setData((d) => ({
       ...d,
       series: d.series.filter((s) => s.id !== id),
-      entries: d.entries.filter((e) => e.seriesId !== id),
+      entries: d.entries,
     }));
   }, []);
 
@@ -213,7 +230,7 @@ export function useOrbitals() {
       for (const s of d.series) {
         if (s.paused) continue;
         if (s.skippedDates?.includes(date)) continue;
-        if (!recursOn(s.rule, s.anchorDate, date)) continue;
+        if (!seriesOn(s, date)) continue;
         if (entries.some((e) => e.seriesId === s.id && e.date === date)) continue;
         const occ: Entry = {
           id: uid('e'),
@@ -251,10 +268,15 @@ export function useOrbitals() {
     [],
   );
 
+  const addFinancialRecord = useCallback((text:string,kind:LedgerKind,amount:number)=>{
+    if(!text.trim()||!Number.isFinite(amount)||amount<0)return;
+    const item:FinancialRecord={id:uid('f'),text:text.trim(),kind,amount,createdAt:Date.now()};
+    setData(d=>({...d,financialRecords:[...(d.financialRecords??preservedFinances(d)),item]}));
+  },[]);
   const updateBuyItem = useCallback((id: string, patch: Partial<BuyItem>) => {
     setData((d) => ({
       ...d,
-      buyItems: d.buyItems.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+      buyItems: d.buyItems.map((b) => (b.id === id ? { ...b, ...patch, boughtAt: patch.bought === true ? Date.now() : patch.bought === false ? undefined : b.boughtAt } : b)),
     }));
   }, []);
 
@@ -287,24 +309,28 @@ export function useOrbitals() {
   }, []);
 
   const importArchive = useCallback((incoming: AppData) => {
-    setData(sanitize(incoming));
+    setData(cleanupTestSkies(sanitize(incoming)));
   }, []);
 
   return {
     data,
     addEntries,
+    addOrbit,
     updateEntry,
-    deleteEntry,
+    deleteEntry,restoreEntry,bloodMoon,deleteMoodLog,undoDiscard,canUndoDiscard:!!latestDiscard(data),
     moveEntry,
     letOrbit,
     recallOrbital,
     reorderEntry,
     setMood,
+    addMood,
+    addEvent,
     addSeries,
     updateSeries,
     deleteSeries,
     materializeRecurring,
     addBuyItem,
+    addFinancialRecord,
     updateBuyItem,
     deleteBuyItem,
     createConstellation,
@@ -312,22 +338,6 @@ export function useOrbitals() {
     deleteConstellation,
     importArchive,
   };
-}
-
-export function recursOn(rule: RecurrenceRule, anchorDate: string, date: string): boolean {
-  if (date < anchorDate) return false;
-  const [am, ad] = anchorDate.split('-').map(Number).slice(1);
-  const [m, d] = date.split('-').map(Number).slice(1);
-  switch (rule) {
-    case 'daily':
-      return true;
-    case 'weekly':
-      return dowOf(anchorDate) === dowOf(date);
-    case 'monthly':
-      return d === ad;
-    case 'yearly':
-      return m === am && d === ad;
-  }
 }
 
 export function dowOf(iso: string): number {

@@ -8,7 +8,7 @@ import {
   parseArchive,
   parsePlan,
   previewPlan,
-} from './evol';
+} from './evolArchive';
 import type { AppData, Constellation } from './types';
 
 export type EvolTarget =

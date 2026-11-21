@@ -1,0 +1,2 @@
+import {moonOutline} from './celestial';
+export function MoonMark({x,y,phase}:{x:number;y:number;phase:number}){const shape=moonOutline(phase);return <g className="moon-mark" transform={'translate('+x+' '+y+')'} aria-hidden="true"><circle r="3" className="moon-dark-limb"/>{shape.full||shape.newMoon?<circle r="3" className={shape.newMoon?'moon-phase-outline moon-new':'moon-phase-outline'}/>:<path className="moon-phase-outline" d={shape.d} transform={'scale('+shape.mirror+' 1)'}/>}</g>}
